@@ -1,0 +1,29 @@
+# --- Client scope that will carry the Pairwise subject identifier mapper
+resource "keycloak_openid_client_scope" "ppid" {
+  realm_id               = data.keycloak_realm.realm.id
+  name                   = "ppid"
+  include_in_token_scope = false
+}
+
+# --- Attach the built-in Pairwise subject identifier mapper to that scope
+# Use your provider's generic protocol-mapper resource. The exact type name
+# can vary by distribution; many expose one called "keycloak_generic_protocol_mapper".
+resource "keycloak_generic_protocol_mapper" "ppid_sub" {
+  realm_id        = data.keycloak_realm.realm.id
+  client_scope_id = keycloak_openid_client_scope.ppid.id
+
+  name            = "pairwise-sub"
+  protocol        = "openid-connect"
+  protocol_mapper = "oidc-sha256-pairwise-sub-mapper"
+
+  config = {
+    "access.token.claim"   = "true"
+    "id.token.claim"       = "true"
+    "userinfo.token.claim" = "true"
+
+    # Optional: required when your client has redirect URIs on different hosts
+    # and you want a stable sector across them.
+    # Must be HTTPS and return a JSON array of redirect URIs.
+    # "sector.identifier.uri" = "https://example.org/sector.json"
+  }
+}
