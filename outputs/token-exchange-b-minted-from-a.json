@@ -1,0 +1,12 @@
+{
+  "exp": 1757607342,
+  "iat": 1757607042,
+  "jti": "ntrtte:e25d57bf-bf52-bd4e-a773-f06c1d3630c0",
+  "iss": "http://localhost:8080/realms/poc",
+  "aud": "client-b",
+  "sub": "fa684ac8-df5d-302c-a0c8-1fbcc9c2dd14",
+  "typ": "Bearer",
+  "azp": "client-b",
+  "sid": "a73263de-37a2-4e26-999b-a44dca94c40b",
+  "scope": "read:finance"
+}

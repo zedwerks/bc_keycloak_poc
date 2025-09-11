@@ -1,0 +1,15 @@
+{
+  "exp": 1757607161,
+  "iat": 1757606861,
+  "jti": "onrtac:d19e185e-7a40-504b-c1e7-d2c962f5a742",
+  "iss": "http://localhost:8080/realms/poc",
+  "aud": [
+    "client-a",
+    "client-b"
+  ],
+  "sub": "7d97bcab-681b-3233-a3a5-7363d400fe6b",
+  "typ": "Bearer",
+  "azp": "client-a",
+  "sid": "a73263de-37a2-4e26-999b-a44dca94c40b",
+  "scope": "allow:client-b"
+}

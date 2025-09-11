@@ -1,18 +1,19 @@
 # --- Client scope that will carry the Pairwise subject identifier mapper
-resource "keycloak_openid_client_scope" "ppid" {
+resource "keycloak_openid_client_scope" "scope_ppid_sector_a" {
   realm_id               = data.keycloak_realm.realm.id
-  name                   = "ppid"
-  include_in_token_scope = false
+  name                   = "ppid-sector-a"
+  include_in_token_scope = false # we don't want this scope to be requested directly, or viewable in the token
+  description            = "Pairwise subject identifier scope for privacy sector A"
 }
 
 # --- Attach the built-in Pairwise subject identifier mapper to that scope
 # Use your provider's generic protocol-mapper resource. The exact type name
 # can vary by distribution; many expose one called "keycloak_generic_protocol_mapper".
-resource "keycloak_generic_protocol_mapper" "ppid_sub" {
+resource "keycloak_generic_protocol_mapper" "ppid_sub_a" {
   realm_id        = data.keycloak_realm.realm.id
-  client_scope_id = keycloak_openid_client_scope.ppid.id
+  client_scope_id = keycloak_openid_client_scope.scope_ppid_sector_a.id
 
-  name            = "pairwise-sub"
+  name            = "pairwise-sub-sector-a"
   protocol        = "openid-connect"
   protocol_mapper = "oidc-sha256-pairwise-sub-mapper"
 

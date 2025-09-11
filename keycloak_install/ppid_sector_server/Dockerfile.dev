@@ -1,0 +1,44 @@
+# Dockerfile.dev
+FROM node:22-alpine
+
+# --- build-time vars (override with --build-arg) ---
+ARG SECTOR_A_HOST=sector-a.local
+ARG SECTOR_B_HOST=sector-b.local
+ARG CERT_DIR=/app/certs
+ARG KEY_FILE=$CERT_DIR/key.pem
+ARG CERT_FILE=$CERT_DIR/cert.pem
+
+# deps for openssl
+RUN apk add --no-cache openssl
+
+# app dir
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci || npm install
+COPY server.mjs ./server.mjs
+
+# generate a small self-signed SAN cert that covers both hosts
+RUN mkdir -p $CERT_DIR && \
+    cat > $CERT_DIR/openssl.cnf <<'EOF' && \
+    printf "[SAN]\nsubjectAltName=DNS:${SECTOR_A_HOST},DNS:${SECTOR_B_HOST}\n" >> $CERT_DIR/openssl.cnf && \
+    openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
+      -subj "/CN=sector-json.local" \
+      -keyout $KEY_FILE -out $CERT_FILE \
+      -addext "subjectAltName=DNS:${SECTOR_A_HOST},DNS:${SECTOR_B_HOST}"
+EOF
+
+# non-root
+RUN addgroup -S app && adduser -S app -G app && chown -R app:app /app && \
+    chmod 644 $KEY_FILE $CERT_FILE && \
+    chmod 755 /app/server.mjs
+USER app
+
+# defaults for server.mjs
+ENV PORT=8443
+ENV SECTOR_A_HOST=${SECTOR_A_HOST}
+ENV SECTOR_B_HOST=${SECTOR_B_HOST}
+ENV TLS_CERT=${CERT_FILE}
+ENV TLS_KEY=${KEY_FILE}
+
+EXPOSE 8443
+CMD ["node", "server.mjs"]

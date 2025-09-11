@@ -4,17 +4,14 @@ resource "keycloak_openid_client" "client_a" {
   name                            = "Client A"
   enabled                         = true
   access_type                     = "CONFIDENTIAL"
+  client_secret                   = "RNrsYos1urQ4DqNTr40NILKCLWEQgfJL"
   standard_flow_enabled           = true
-  valid_redirect_uris             = ["https://oauth.pstmn.io/v1/callback", "https://oauth.pstmn.io/v1/browser-callback"]
+  valid_redirect_uris             = ["https://oauth.pstmn.io/v1/callback"]
   web_origins                     = ["https://oauth.pstmn.io"]
-  root_url                        = "https://oauth.pstmn.io"
-  base_url                        = "https://oauth.pstmn.io"
+  base_url                        = "https://localhost:9001"
   pkce_code_challenge_method      = "S256"
+  full_scope_allowed              = false
   standard_token_exchange_enabled = true
-  extra_config = {
-    subjectType = "pairwise"
-    "access.token.format" = "opaque" # No longer a JWT.
-  }
 }
 
 resource "keycloak_openid_audience_protocol_mapper" "client_a_audience_mapper" {
@@ -35,16 +32,16 @@ resource "keycloak_openid_client_scope" "allow_client_b" {
 }
 
 resource "keycloak_openid_client_default_scopes" "client_a_default_scopes" {
-  realm_id = data.keycloak_realm.realm.id
-  client_id = keycloak_openid_client.client_a.id
-  default_scopes = [keycloak_openid_client_scope.ppid.name]
-  depends_on = [keycloak_openid_client.client_a]
+  realm_id       = data.keycloak_realm.realm.id
+  client_id      = keycloak_openid_client.client_a.id
+  default_scopes = [keycloak_openid_client_scope.scope_ppid_sector_a.name]
+  depends_on     = [keycloak_openid_client.client_a, keycloak_openid_client_scope.scope_ppid_sector_a]
 }
 
 resource "keycloak_openid_client_optional_scopes" "client_a_optional_scopes" {
   realm_id        = data.keycloak_realm.realm.id
   client_id       = keycloak_openid_client.client_a.id
-  optional_scopes = [keycloak_openid_client_scope.allow_client_b.name]
+  optional_scopes = ["profile", keycloak_openid_client_scope.allow_client_b.name]
   depends_on      = [keycloak_openid_client.client_a]
 }
 
@@ -70,12 +67,12 @@ resource "keycloak_generic_protocol_mapper" "aud_client_b" {
   protocol        = "openid-connect"
   protocol_mapper = "oidc-audience-mapper"
   config = {
-    "included.client.audience" = keycloak_openid_client.client_b.client_id
-    "introspection.token.claim"  = "true"
-    "userinfo.token.claim"       = "false"
-    "id.token.claim"             = "false"
-    "access.token.claim"         = "true"
-    "access.tokenResponse.claim" = "false"
+    "included.client.audience"       = keycloak_openid_client.client_b.client_id
+    "introspection.token.claim"      = "true"
+    "userinfo.token.claim"           = "false"
+    "id.token.claim"                 = "false"
+    "access.token.claim"             = "true"
+    "access.tokenResponse.claim"     = "false"
     "lightweight.access.token.claim" = "true"
   }
   depends_on = [keycloak_openid_client_scope.allow_client_b]

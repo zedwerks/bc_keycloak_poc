@@ -1,0 +1,19 @@
+version: "3.8"
+services:
+  sector-json:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        SECTOR_A_HOST: "sector-a.local"
+        SECTOR_B_HOST: "sector-b.local"
+    container_name: sector-json
+    restart: unless-stopped
+    ports:
+      - "8443:8443"
+    environment:
+      PORT: "8443"
+      SECTOR_A_HOST: "sector-a.local"
+      SECTOR_B_HOST: "sector-b.local"
+      TLS_CERT: "/app/certs/cert.pem"
+      TLS_KEY: "/app/certs/key.pem"
