@@ -18,9 +18,11 @@ resource "keycloak_generic_protocol_mapper" "ppid_sub_a" {
   protocol_mapper = "oidc-sha256-pairwise-sub-mapper"
 
   config = {
-    "access.token.claim"   = "true"
-    "id.token.claim"       = "true"
-    "userinfo.token.claim" = "true"
+    "access.token.claim"       = "true"
+    "lightweight.token.claim"  = "true"
+    "id.token.claim"           = "true"
+    "userinfo.token.claim"     = "true"
+    "pairwiseSubAlgorithmSalt" = "4575bda8-40eb-4b06-9f9c-92e3dceb2eb7"
 
     # Optional: required when your client has redirect URIs on different hosts
     # and you want a stable sector across them.

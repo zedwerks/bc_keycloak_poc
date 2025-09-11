@@ -21,7 +21,7 @@ resource "keycloak_generic_protocol_mapper" "ppid_sub_b" {
     "access.token.claim"   = "true"
     "id.token.claim"       = "true"
     "userinfo.token.claim" = "true"
-
+    "pairwiseSubAlgorithmSalt" = "8d3ee108-0f94-4b97-aa79-76e3401ce927",
     # Optional: required when your client has redirect URIs on different hosts
     # and you want a stable sector across them.
     # Must be HTTPS and return a JSON array of redirect URIs.
