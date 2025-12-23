@@ -1,0 +1,47 @@
+@startuml connected_services
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+Person(user, "User / Partner Caller", "Browsers, Mobile, Partners")
+System_Boundary(edge, "API Security Edge") {
+  Container(kong, "Kong API Gateway", "Kong", "Token validation, Token Exchange, PEP, DPoP verification, PPID mapping")
+}
+System_Boundary(core, "Trust & Identity Core") {
+  Container(kc, "Keycloak", "OIDC/SAML/VC", "Central AuthZ; Entra + other federation; PPID zones")
+  Container(consent, "Consent Service", "svc", "Capture & enforce consent")
+  Container(deleg, "Delegation Service", "svc", "Grant & manage delegations")
+  Container(policy, "Policy Enforcement", "OPA/PDP", "Central policies & decisions")
+  Container(audit, "Audit & Logging", "SIEM", "Common audit trail")
+  Container(events, "Event Bus", "Kafka/etc", "Event signalling")
+  Container(notify, "Notification Service", "email/sms/push", "User channels")
+}
+System_Boundary(zones, "API & Data Zones") {
+  Container(apiA, "API A", "REST/GraphQL", "Bearer protected; user scopes")
+  Container(apiB, "API B", "REST", "Bearer protected; mixed scopes")
+  Container(apiC, "API C", "REST", "Bearer protected; high sensitivity")
+}
+
+Rel(user, kong, "HTTPS + DPoP, Bearer (user tokens preferred)")
+Rel(kong, kc, "Validate / Introspect + Token Exchange")
+Rel(kong, policy, "PEP → PDP decisions")
+Rel_D(kc, consent, "Consent capture/verify")
+Rel_D(kc, deleg, "Delegation mgmt")
+Rel(kc, notify, "Out-of-band notifications")
+Rel(kc, events, "Emit events")
+Rel(kong, events, "Emit events")
+Rel(apiA, audit, "Audit logs")
+Rel(apiB, audit, "Audit logs")
+Rel(apiC, audit, "Audit logs")
+Rel(kong, apiA, "Route per privacy zone")
+Rel(kong, apiB, "Route per privacy zone")
+Rel(kong, apiC, "Route per privacy zone")
+
+' Signed responses and JWKS
+Rel_D(apiA, user, "Signed responses (JWS)")
+Rel_D(apiB, user, "Signed responses (JWS)")
+Rel_D(apiC, user, "Signed responses (JWS)")
+
+' Notes
+SHOW_LEGEND()
+@enduml

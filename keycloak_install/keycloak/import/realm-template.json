@@ -22,7 +22,7 @@
         "enabled": true,
         "alwaysDisplayInConsole": false,
         "clientAuthenticatorType": "client-secret",
-        "secret": "{{place_terraform_client_secret_here}}",
+        "secret": "{{place_KEYCLOAK_TERRAFORM_CLIENT_SECRET_here}}",
         "redirectUris": [],
         "webOrigins": [],
         "notBefore": 0,

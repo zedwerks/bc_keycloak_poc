@@ -1,5 +1,9 @@
 #!/bin/bash
 
+source ../terraform/env/config.env
+
+printenv | grep TF_
+
 echo "Building Services..."
 if docker compose --file ./docker-compose.yml build; then
     echo "Services built successfully. Now starting..."

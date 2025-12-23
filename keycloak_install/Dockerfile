@@ -15,9 +15,15 @@ COPY keycloak/ /workspace/keycloak/
 
 ## =================================================================================================
 # Package Stage - add to an official Keycloak image
-FROM quay.io/keycloak/keycloak:26.3.3
+FROM quay.io/keycloak/keycloak:26.3.5
 
 USER root
+
+ARG KEYCLOAK_TARGET_REALM
+ARG KEYCLOAK_TERRAFORM_CLIENT_ID
+ARG KEYCLOAK_TERRAFORM_CLIENT_SECRET
+ARG KC_BOOTSTRAP_ADMIN_PASSWORD
+ARG KC_BOOTSTRAP_ADMIN_USERNAME
 
 # need the Keycloak Port ENV var set so we can use it in entrypoint to 
 # apply realm admin rights to the terraform client. 
@@ -25,15 +31,12 @@ USER root
 ENV KEYCLOAK_PORT=8080
 
 # Default ENV vars for the Keycloak image
-ENV KEYCLOAK_ADMIN=admin
-ENV KEYCLOAK_ADMIN_PASSWORD=admin
-ENV KC_BOOTSTRAP_ADMIN_USERNAME=admin
-ENV KC_BOOTSTRAP_ADMIN_PASSWORD=admin
-ENV KEYCLOAK_TARGET_REALM_DISPLAY_NAME="IIS"
-ENV KEYCLOAK_TARGET_REALM=poc
-ENV KEYCLOAK_TERRAFORM_CLIENT_ID=terraform
-ENV KEYCLOAK_TERRAFORM_CLIENT_SECRET=terraform!secret
-
+ENV KC_BOOTSTRAP_ADMIN_USERNAME=${KC_BOOTSTRAP_ADMIN_USERNAME}
+ENV KC_BOOTSTRAP_ADMIN_PASSWORD=${KC_BOOTSTRAP_ADMIN_PASSWORD}
+ENV KEYCLOAK_TARGET_REALM_DISPLAY_NAME="Proof of Concepts"
+ENV KEYCLOAK_TARGET_REALM=${KEYCLOAK_TARGET_REALM}
+ENV KEYCLOAK_TERRAFORM_CLIENT_ID=${KEYCLOAK_TERRAFORM_CLIENT_ID}
+ENV KEYCLOAK_TERRAFORM_CLIENT_SECRET=${KEYCLOAK_TERRAFORM_CLIENT_SECRET}
 # Make sure target directories exist
 RUN mkdir -p /opt/keycloak/bin/ 
 RUN mkdir -p /opt/keycloak/data/import/

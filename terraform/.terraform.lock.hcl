@@ -3,7 +3,7 @@
 
 provider "registry.terraform.io/keycloak/keycloak" {
   version     = "5.4.0"
-  constraints = ">= 5.4.0"
+  constraints = "5.4.0"
   hashes = [
     "h1:u5PsRLnfn1zG1e4TiNv9JWOZN57KGgJNxPvyL8pw63o=",
     "zh:07f808938510c76a90554b108bec90f64d78d329afec8fc99dfc8a3ca25ce51c",

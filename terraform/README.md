@@ -1,4 +1,15 @@
 
-# Run this after you have built and run Keyclaok in Docker
+# Run this Terraform script you have built and run Keycloak in Docker
 
-```source ./env/config.env```
+```bash
+source ./env/config.env
+```
+
+```bash
+terraform init -upgrade
+```
+
+```bash
+terraform apply -auto-approve
+```
+

@@ -1,4 +1,4 @@
-# IIS Keycloak POC for various concepts
+# poc Keycloak POC for various concepts
 
 ## PPID and Token Exchange POC
 

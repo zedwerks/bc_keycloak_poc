@@ -1,11 +1,8 @@
-data "keycloak_realm" "realm" {
-  realm = var.keycloak_realm
-}
 
-resource "keycloak_realm" "poc" {
-  realm                     = var.keycloak_realm
+resource "keycloak_realm" "target" {
+  realm                     = var.realm_id
   enabled                   = true
-  display_name              = "POC Realm"
+  display_name              = "poc Proof of Concepts Realm"
 
   # Set subject type to pairwise
   #attributes = {
