@@ -5,18 +5,26 @@ services:
       dockerfile: Dockerfile
       args:
         KEYCLOAK_TARGET_REALM: ${TF_VAR_realm_id}
-        KEYCLOAK_TERRAFORM_CLIENT_ID: ${TF_VAR_KEYCLOAK_TERRAFORM_CLIENT_ID}
-        KEYCLOAK_TERRAFORM_CLIENT_SECRET: ${TF_VAR_KEYCLOAK_TERRAFORM_CLIENT_SECRET}
+        KEYCLOAK_TERRAFORM_CLIENT_ID: ${TF_VAR_keycloak_terraform_client_id}
+        KEYCLOAK_TERRAFORM_CLIENT_SECRET: ${TF_VAR_keycloak_terraform_client_secret}
         KC_BOOTSTRAP_ADMIN_PASSWORD: admin
         KC_BOOTSTRAP_ADMIN_USERNAME: admin
     container_name: keycloak
     environment:
-      KC_HTTP_ENABLED: true
-      KC_HOSTNAME: localhost
-      KC_HOSTNAME_STRIC: false
-      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HTTP_ENABLED: false
+      KC_HOSTNAME: keycloak.local
+      KC_HOSTNAME_STRIC: true
+      KC_HOSTNAME_STRICT_HTTPS: true
+      # HTTPS
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/certs/keycloak.local.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/certs/keycloak.local-key.pem
+
+      KC_PROXY: none
+
+    volumes:
+      - ./https/certs:/opt/keycloak/certs:ro
     ports:
-      - 8080:8080
+      - 8443:8443
     command:
       - start-dev
       - --log-level=INFO

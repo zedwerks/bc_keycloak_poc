@@ -5,7 +5,8 @@ source env/config.env
 printenv | grep TF_
 rm -rf .terraform.tfstate .terraform.tfstate.backup
 terraform init -upgrade
-terraform import -input -var-file=terraform.tfvars keycloak_realm.target poc
-terraform apply -var-file=terraform.tfvars  -auto-approve
+terraform import -input keycloak_realm.target poc
+terraform apply -auto-approve
 cd ../try_it_out
+echo $TF_VAR_keycloak_base_url
 echo done.

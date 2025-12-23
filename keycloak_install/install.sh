@@ -17,7 +17,7 @@ fi
 
 # Wait for the service to start.
 echo "Waiting for Keycloak to start..."
-until $(curl --output /dev/null --silent --head --fail http://localhost:8080); do
+until $(curl --output /dev/null --silent --head --fail $TF_VAR_keycloak_base_url); do
     printf '.'
     sleep 1
 done
