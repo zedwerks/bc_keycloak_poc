@@ -1,0 +1,43 @@
+meta {
+  name: Auth -> 02 - Get Token for Code
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{keycloak_realm_uri}}/protocol/openid-connect/token
+  body: formUrlEncoded
+  auth: basic
+}
+
+auth:basic {
+  username: {{client_a1}}
+  password: {{client_a1_secret}}
+}
+
+body:form-urlencoded {
+  grant_type: authorization_code
+  code: be82fe56-11c7-43dc-869f-340cb4337083.c244d0b4-afb7-4902-8130-7361866bff01.18ab6907-fab3-497f-bace-570f9f03cbc6
+  redirect_uri: {{redirect_uri}}
+  code_verifier: {{pkce_verifier}}
+  scope: openid profile
+}
+
+script:post-response {
+  const body = res.getBody();
+  
+  if (!body.access_token) {
+    throw new Error("Token exchange failed");
+  }
+  
+  bru.setEnvVar("client_a1_access_token", body.access_token);
+  bru.setEnvVar("client_a1_refresh_token", body.refresh_token);
+  bru.setEnvVar("client_a1_id_token", body.id_token);
+  
+  console.log("OIDC tokens stored for Client A");
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

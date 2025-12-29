@@ -1,0 +1,40 @@
+meta {
+  name: Token Exchange (b1 -> a1)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{keycloak_realm_uri}}/protocol/openid-connect/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+  subject_token: {{client_b_access_token}}
+  subject_token_type: urn:ietf:params:oauth:token-type:access_token
+  requested_token_type: urn:ietf:params:oauth:token-type:access_token
+  client_id: {{client_k}}
+  client_secret: {{client_k_secret}}
+  audience: client-a1
+  scope: openid read:sdpr
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  ## In Curl
+  
+  curl -X POST "https://keycloak.local:8443/realms/poc/protocol/openid-connect/token" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -H "Authorization: Basic $(echo -n 'delegate-client:CLIENT_SECRET' | base64)" \
+    --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+    --data-urlencode "subject_token=ALICE_ACCESS_TOKEN" \
+    --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:access_token" \
+    --data-urlencode "requested_subject=AMINA_USER_ID" \
+    --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token"
+}

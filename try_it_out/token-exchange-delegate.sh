@@ -6,7 +6,7 @@ REALM=$TF_VAR_realm_id
 ISSUER_BASE="http://localhost:8080/realms/$REALM"    
 TOKEN_ENDPOINT="$ISSUER_BASE/protocol/openid-connect/token"
 CLIENT_ID="client-d" 
-CLIENT_SECRET=$TF_VAR_delegate_client_secret
+CLIENT_SECRET=$TF_VAR_client_delegate_svc_secret
 USER_ACCESS_TOKEN=$(cat tokens/access-token.jwt)
 
 DELEGATED_SUBJECT_USER_ID=${amina_sub_uuid}

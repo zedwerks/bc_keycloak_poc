@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "IIS PoC ",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

@@ -1,0 +1,32 @@
+meta {
+  name: Client Kong Service
+}
+
+auth {
+  mode: oauth2
+}
+
+auth:oauth2 {
+  grant_type: client_credentials
+  access_token_url: {{keycloak_realm_uri}}/protocol/openid-connect/token
+  refresh_token_url: 
+  client_id: {{client_k}}
+  client_secret: {{client_k_secret}}
+  scope: openid
+  credentials_placement: basic_auth_header
+  credentials_id: credentials
+  token_placement: header
+  token_header_prefix: Bearer
+  auto_fetch_token: true
+  auto_refresh_token: false
+}
+
+docs {
+  # About
+  This represents the Delegate Service, which will perform this Token Exchange 
+  when it receives an 'exchange' request from a Client, like Clien A.
+  
+  - We pass in the access_token for Alice for Client A, and we use the subject id for Amina.
+  
+  
+}

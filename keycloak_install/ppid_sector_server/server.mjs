@@ -8,22 +8,14 @@ import helmet from "helmet";
  * These arrays must list the registered redirect URIs for each client.
  * It's fine if both list the same Postman callback; the SECTOR is the hostname of this server.
  */
-const redirectsForA = [
-  "https://oauth.pstmn.io/v1/callback"
-  // add more if client-a has others
-];
 
-const redirectsForB = [
-  "https://oauth.pstmn.io/v1/browser-callback"
-  // add more if client-b has others
-];
 
 // Expected hostnames (as they appear in the Host header / certificate SAN)
 const HOST_A = process.env.SECTOR_A_HOST || "sector-a.example.com";
 const HOST_B = process.env.SECTOR_B_HOST || "sector-b.example.com";
 
 // TLS certs (SAN must cover both HOST_A and HOST_B)
-const CERT_FILE = process.env.TLS_CERT || "./sector-a.example.com+2.pem";
+const CERT_FILE = process.env.TLS_CERT || "./cert.pem";
 const KEY_FILE  = process.env.TLS_KEY  || "./sector-a.example.com+2-key.pem";
 
 // ----------------------------------------------------------------------------
@@ -35,20 +27,24 @@ app.use(helmet()); // safe defaults; doesn't affect JSON
 // Serve a health check
 app.get("/healthz", (_, res) => res.type("text/plain").send("ok"));
 
-// Serve sector.json; choose content by Host header
-app.get("/sector.json", (req, res) => {
-  const host = (req.headers.host || "").split(":")[0].toLowerCase();
+var sector_a = [
+  "client-a1",
+  "client-a2"
+];
 
-  if (host === HOST_A) {
-    return res.type("application/json").send(JSON.stringify(redirectsForA));
-  }
-  if (host === HOST_B) {
-    return res.type("application/json").send(JSON.stringify(redirectsForB));
-  }
+var sector_b = [
+  "client-b",
+  "client-b-rs"
+]
 
-  // Unknown host — respond 404 to avoid leaking config
-  res.status(404).type("application/json").send(JSON.stringify({ error: "unknown host" }));
+app.get("/sector_a.json", (req, res) => {
+  return res.type("application/json").send(JSON.stringify(sector_a));
 });
+
+app.get("/sector_b.json", (req, res) => {
+  return res.type("application/json").send(JSON.stringify(sector_b));
+});
+
 
 // Strictly cacheable per spec (optional)
 app.use((_, res, next) => {

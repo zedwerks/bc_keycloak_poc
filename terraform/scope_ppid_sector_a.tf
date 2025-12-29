@@ -23,6 +23,6 @@ resource "keycloak_generic_protocol_mapper" "ppid_sub_a" {
     "id.token.claim"           = "true"
     "userinfo.token.claim"     = "true"
     "pairwiseSubAlgorithmSalt" = "4575bda8-40eb-4b06-9f9c-92e3dceb2eb7"
-    "sectorIdentifierUri"      = "https://example.com/sector-a.json" # <-- must be HTTPS
+    "sectorIdentifierUri"      = "https://sector-a.local:9443/sector-a.json" # <-- must be HTTPS
   }
 }

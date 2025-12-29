@@ -1,0 +1,84 @@
+meta {
+  name: Auth -> 01 - Authorize (Browser)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{keycloak_realm_uri}}/protocol/openid-connect/auth?response_type=code&client_id={{client_a1}}&redirect_uri={{redirect_uri}}&code_challenge={{pkce_challenge}}&state=bruno-client-a-test&code_challenge_method=S256
+  body: none
+  auth: inherit
+}
+
+params:query {
+  response_type: code
+  client_id: {{client_a1}}
+  redirect_uri: {{redirect_uri}}
+  code_challenge: {{pkce_challenge}}
+  state: bruno-client-a-test
+  code_challenge_method: S256
+  ~user_id: alice
+}
+
+body:form-urlencoded {
+  : 
+  : 
+}
+
+script:pre-request {
+  // Bruno inbuilt libs (no global `crypto`)
+  const CryptoJS = require('crypto-js');
+  const { customAlphabet } = require('nanoid');
+  
+  // RFC7636 verifier chars: ALPHA / DIGIT / "-" / "." / "_" / "~"
+  const pkceAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+  
+  // 43..128 chars recommended; 64 is common
+  const verifier = customAlphabet(pkceAlphabet, 64)();
+  
+  // S256 challenge = BASE64URL( SHA256(verifier) )
+  const sha256 = CryptoJS.SHA256(verifier); // WordArray
+  const b64 = CryptoJS.enc.Base64.stringify(sha256);
+  
+  const challenge = b64
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+  
+  // Save (namespace these per-client if needed!)
+  bru.setEnvVar("pkce_verifier", verifier);
+  bru.setEnvVar("pkce_challenge", challenge);
+  
+  console.log("PKCE ---------------");
+  console.log("pkce_verifier = " + bru.getEnvVar("pkce_verifier"))
+  console.log("pkce_challenge = " + bru.getEnvVar("pkce_challenge"))
+  
+  // {{keycloak_realm_uri}}/protocol/openid-connect/auth?response_type=code&client_id={{client_a1}}&redirect_uri={{redirect_uri}}&code_challenge={{pkce_challenge}}&state=bruno-client-a-test&code_challenge_method=S256
+  
+  var keycloak_realm_uri = bru.getEnvVar('keycloak_realm_uri');
+  var client_a1 = bru.getEnvVar("client_a1");
+  var redirect_uri = bru.getEnvVar("redirect_uri");
+  var pkce_challenge = bru.getEnvVar("pkce_challenge");
+  
+  
+  console.log("\n=== OPEN THIS URL IN A BROWSER ===");
+  console.log(`${keycloak_realm_uri}/protocol/openid-connect/auth?response_type=code&client_id=${client_a1}&redirect_uri=${redirect_uri}&code_challenge=${pkce_challenge}&state=clienta999&code_challenge_method=S256`);
+  console.log("================================\n");
+  
+  // Optional: save it
+  //bru.setEnvVar("resolved_authorize_url", resolvedAuthorizeUrl);
+  
+}
+
+script:post-response {
+  // Status must be 302
+  if (res.status === 200) {
+    throw new Error(`Okay, now look at the Console Log and cpy the Authorize URL into a browser, Then copy the code value returned by the redirect`);
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

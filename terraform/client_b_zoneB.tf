@@ -1,0 +1,54 @@
+resource "keycloak_openid_client" "client_b" {
+  realm_id                        = keycloak_realm.target.realm
+  client_id                       = "client-b"
+  name                            = "Client B (User app))"
+  enabled                         = true
+  access_type                     = "PUBLIC"
+  direct_access_grants_enabled    = false
+  implicit_flow_enabled           = false
+  standard_flow_enabled           = true
+  service_accounts_enabled        = false
+  valid_redirect_uris             = ["http://127.0.0.1:3001/callback"]
+  base_url                        = "https://localhost:8888"
+  web_origins                     = []
+  full_scope_allowed              = false
+
+  oauth2_device_authorization_grant_enabled = false
+
+  extra_config = {
+    # Pairwise subject (privacy zone behavior)
+    "subject_type" = "pairwise"
+    # You’ll set a sector identifier URI per zone.
+    # (Exact attribute keys vary by KC version; treat as the intent.)
+    "sector.identifier.uri" = "https://sector-b.local:9443/sector-b.json"
+  }
+}
+
+resource "keycloak_openid_client_default_scopes" "client_b_default_scopes" {
+  realm_id       = keycloak_realm.target.realm
+  client_id      = keycloak_openid_client.client_b.id
+  default_scopes = ["openid", keycloak_openid_client_scope.scope_ppid_sector_b.name]
+  depends_on     = [keycloak_openid_client.client_b, keycloak_openid_client_scope.scope_ppid_sector_b]
+}
+
+resource "keycloak_openid_client_optional_scopes" "client_b_optional_scopes" {
+  realm_id        = keycloak_realm.target.realm
+  client_id       = keycloak_openid_client.client_b.id
+  optional_scopes = ["profile", keycloak_openid_client_scope.read_finance.name, keycloak_openid_client_scope.read_sdpr.name]
+  depends_on      = [keycloak_openid_client.client_b, 
+    keycloak_openid_client_scope.read_finance,
+    keycloak_openid_client_scope.read_sdpr]
+}
+
+/* Need this to allow Kong to perform token exchange. Kong must me an audience of the
+ * token to be exchanged.
+ */
+resource "keycloak_openid_audience_protocol_mapper" "client_b_kong_audience_mapper" {
+  realm_id                 = keycloak_realm.target.realm
+  client_id                = keycloak_openid_client.client_b.id
+  name                     = "client-b-audience-mapper"
+  included_custom_audience = keycloak_openid_client.client_kong.client_id
+  add_to_access_token      = true
+  add_to_id_token          = true
+  depends_on               = [keycloak_openid_client.client_kong]
+}
