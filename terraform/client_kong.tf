@@ -17,17 +17,22 @@ resource "keycloak_openid_client" "client_kong" {
 resource "keycloak_openid_client_default_scopes" "client_kong_default_scopes" {
   realm_id       = keycloak_realm.target.realm
   client_id      = keycloak_openid_client.client_kong.id
-  default_scopes = ["openid", keycloak_openid_client_scope.scope_ppid_sector_b.name]
-  depends_on     = [keycloak_openid_client_scope.scope_ppid_sector_b]
+  default_scopes = ["openid"]
 }
 
 resource "keycloak_openid_client_optional_scopes" "client_kong_optional_scopes" {
   realm_id        = keycloak_realm.target.realm
   client_id       = keycloak_openid_client.client_kong.id
-  optional_scopes = ["profile", keycloak_openid_client_scope.read_finance.name, keycloak_openid_client_scope.read_sdpr.name]
+  optional_scopes = ["profile", 
+  keycloak_openid_client_scope.scope_ppid_sector_a.name, 
+  keycloak_openid_client_scope.scope_ppid_sector_b.name, 
+  keycloak_openid_client_scope.read_finance.name, 
+  keycloak_openid_client_scope.read_sdpr.name]
   depends_on      = [keycloak_openid_client.client_kong, 
     keycloak_openid_client_scope.read_finance,
-    keycloak_openid_client_scope.read_sdpr]
+    keycloak_openid_client_scope.read_sdpr,
+    keycloak_openid_client_scope.scope_ppid_sector_a,
+    keycloak_openid_client_scope.scope_ppid_sector_b]
 }
 
 
