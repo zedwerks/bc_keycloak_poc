@@ -41,7 +41,8 @@ script:post-response {
   const [, payload] = token.split('.');
   const decodedPayload = JSON.parse(base64UrlDecode(payload));
   
-  console.log('Decoded access token payload:', decodedPayload);
+  console.log("Kong was Minted (Token Exchange) the following Token:")
+  console.log(JSON.stringify(decodedPayload, null, 2));
 }
 
 settings {

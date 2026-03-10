@@ -9,4 +9,4 @@ terraform import -input keycloak_realm.target poc
 terraform apply -auto-approve
 cd ../try_it_out
 echo $TF_VAR_keycloak_base_url
-echo done.
+echo done. 

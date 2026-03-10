@@ -1,4 +1,4 @@
-export KC_HOST="http://localhost:8080"
+export KC_HOST="https://localhost:8080"
 export REALM="poc"
 export CLIENT_ID=$TF_VAR_keycloak_KEYCLOAK_TERRAFORM_CLIENT_ID
 export SECRET=$TF_VAR_keycloak_KEYCLOAK_TERRAFORM_CLIENT_SECRET

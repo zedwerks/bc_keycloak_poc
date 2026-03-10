@@ -1,0 +1,16 @@
+@startuml
+title Delegation Interaction (Human Actors)
+
+skinparam linetype ortho
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+
+actor "Amina\n(Delegator)" as Amina
+actor "Alice\n(Delegate)" as Alice
+
+Amina -[#000]-> Alice : 1. Delegates authority\n(scope, conditions)
+Alice -[#000]-> Amina : 2. Acts on behalf of Amina\nwithin delegation
+
+@enduml

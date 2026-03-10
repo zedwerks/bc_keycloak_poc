@@ -1,0 +1,32 @@
+{
+    "exp": 1767041880,
+    "iat": 1767041580,
+    "jti": "onrtrt:efa7930e-06ef-4389-2260-78c0376fbc55",
+    "iss": "https://keycloak.local:8443/realms/poc",
+    "aud": [
+        "client-kong",
+        "client-b-rs"
+    ],
+    "sub": "7d3ea860-48dd-3a7d-a7b8-281e5805f282",
+    "typ": "Bearer",
+    "azp": "client-a1",
+    "sid": "989c4562-cca7-45ef-a829-c309e7536d64",
+    "scope": "openid profile read:finance",
+    "name": "Alice Smith",
+    "preferred_username": "alice",
+    "given_name": "Alice",
+    "family_name": "Smith",
+    "delegation": {
+        "delegator": {
+            "sub": "20aeaac7-5026-4546-be36-04be27e9a76e"
+        },
+        "delegate": {
+            "sub": "7d3ea860-48dd-3a7d-a7b8-281e5805f282"
+        },
+        "scope": [
+            "read:finance",
+            "read:sdpr"
+        ],
+        "expires_at": 1735689600
+    }
+}

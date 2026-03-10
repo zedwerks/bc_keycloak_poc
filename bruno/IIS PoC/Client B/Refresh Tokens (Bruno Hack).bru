@@ -36,6 +36,22 @@ script:post-response {
   // Debug log
   console.log("Client B access token saved");
   
+  function base64UrlDecode(str) {
+    str = str.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = str.length % 4;
+    if (pad) {
+      str += '='.repeat(4 - pad);
+    }
+    return Buffer.from(str, 'base64').toString('utf8');
+  }
+  
+  
+  var token = body.access_token
+  
+  const [, payload] = token.split('.');
+  const decodedPayload = JSON.parse(base64UrlDecode(payload));
+  
+  console.log(JSON.stringify(decodedPayload, null, 2));
 }
 
 settings {

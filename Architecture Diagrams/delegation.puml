@@ -1,0 +1,46 @@
+@startuml Delegation
+title Delegated Token Exchange (No Impersonation)
+
+skinparam linetype ortho
+skinparam sequence {
+  ArrowColor #333
+  LifeLineBorderColor #333
+  LifeLineBackgroundColor #F9F9F9
+}
+
+participant "Alice\n(Delegate)" as Alice
+participant "Delegation Service\n(Service Account)" as DS
+participant "Keycloak\nwith Custom Token Exchange Endpoint" as KC
+participant "Resource Server / API" as RS
+
+== Step 1: Alice authenticates ==
+Alice -> KC : Authorization Code / Client Auth
+KC --> Alice : Access Token\n(sub = Alice)
+
+== Step 2: Alice requests delegated access ==
+Alice -> DS : Request delegation token\nfor Amina\n(scope, expiry)
+
+== Step 3: Delegation Service performs token exchange ==
+DS -> KC : POST /token\n\
+grant_type=urn:ietf:params:oauth:grant-type:token-exchange\n\
+subject_token = Alice_token\n\
+delegation_id = <uuid>\n\
+delegator_sub = Amina
+
+== Step 4: Keycloak mints delegated token ==
+KC --> DS : Access Token\n\
+sub = Alice\n\
+delegation = {\n\
+  delegator_sub: Amina,\n\
+  scopes,\n\
+  expires_at\n\
+}
+
+== Step 5: Delegated token is returned ==
+DS --> Alice : Delegated Access Token
+
+== Step 6: Resource access ==
+Alice -> RS : API call\nAuthorization: Bearer delegated_token
+RS --> Alice : Authorized response\n(acting for Amina)
+
+@enduml

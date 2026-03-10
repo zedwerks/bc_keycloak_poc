@@ -2,7 +2,7 @@
   "exp": 1757609033,
   "iat": 1757608733,
   "jti": "onrtac:4d372972-bc89-a385-6682-beba91e82956",
-  "iss": "http://localhost:8080/realms/poc",
+  "iss": "https://keycloak.local:8443/realms/poc",
   "aud": [
     "client-a",
     "client-b"
