@@ -11,10 +11,9 @@ public final class DelegationTokenExchangeProviderFactory implements TokenExchan
     public static final String PROVIDER_ID = "delegation-token-exchange";
 
     @Override
-    public TokenExchangeProvider create(KeycloakSession session) {
+    public DelegationTokenExchangeProvider create(KeycloakSession session) {
         // @TODO: build a real HTTP client + config
-        DelegationServiceClient client = new SimpleDelegationServiceClient(session);
-        return new DelegationTokenExchangeProvider(session, client);
+        return new DelegationTokenExchangeProvider(session);
     }
 
     @Override

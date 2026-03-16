@@ -15,7 +15,7 @@ COPY keycloak/ /workspace/keycloak/
 
 ## =================================================================================================
 # Package Stage - add to an official Keycloak image
-FROM quay.io/keycloak/keycloak:26.3.5
+FROM quay.io/keycloak/keycloak:26.5.5
 
 USER root
 
