@@ -52,19 +52,19 @@ public class DelegationUserResolver {
             @HeaderParam(AUTHORIZATION_HEADER_NAME) String authorizationHeader,
             MultivaluedMap<String, String> form) {
 
-        RealmModel realm = session.getContext().getRealm();
-
-        String subjectTokenString = form.getFirst(PARAM_SUBJECT_TOKEN);
-        if (subjectTokenString == null) {
-            logger.warn("Missing subject_token parameter");
-            throw new BadRequestException("Missing subject_token");
-        }
-
-        String bearerToken = AuthTokenHelper.extractBearerToken(authorizationHeader);
-
-        String userId;
-
         try {
+            RealmModel realm = session.getContext().getRealm();
+
+            String subjectTokenString = form.getFirst(PARAM_SUBJECT_TOKEN);
+            if (subjectTokenString == null) {
+                logger.warn("Missing subject_token parameter");
+                throw new BadRequestException("Missing subject_token");
+            }
+
+            String bearerToken = AuthTokenHelper.extractBearerToken(authorizationHeader);
+
+            String userId;
+
             // 1️⃣ Verify caller token
             AccessToken callerToken = AuthTokenHelper.verifyCallerBearerToken(
                     realm,
@@ -86,13 +86,16 @@ public class DelegationUserResolver {
                 throw new NotFoundException("User not found in subject_token");
             }
 
-        } catch (VerificationException | NotAuthorizedException e) {
+            Map<String, Object> response = Map.of(RESPONSE_USER_ID_FIELD, userId);
+            return Response.ok(response).build();
+
+        } catch (NotAuthorizedException e) {
             logger.warn("Invalid bearer token", e);
             throw new NotAuthorizedException("Invalid or missing bearer token", e);
 
         } catch (ForbiddenException e) {
             logger.warn("Caller does not have required role", e);
-            throw e;
+            throw e; 
 
         } catch (NotFoundException e) {
             logger.warn("User not found", e);
@@ -103,7 +106,5 @@ public class DelegationUserResolver {
             throw new jakarta.ws.rs.InternalServerErrorException("Internal server error", e);
         }
 
-        Map<String, Object> response = Map.of(RESPONSE_USER_ID_FIELD, userId);
-        return Response.ok(response).build();
     }
 }

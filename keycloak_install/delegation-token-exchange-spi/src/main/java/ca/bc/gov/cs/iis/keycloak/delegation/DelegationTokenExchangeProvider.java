@@ -2,6 +2,11 @@ package ca.bc.gov.cs.iis.keycloak.delegation;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.BadRequestException;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
@@ -18,6 +23,7 @@ import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.tokenexchange.StandardTokenExchangeProvider;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
+import org.keycloak.services.ErrorResponseException;
 
 import ca.bc.gov.cs.iis.keycloak.ppid.PairwiseUtil;
 import ca.bc.gov.cs.iis.keycloak.auth.AuthTokenHelper;
@@ -37,6 +43,9 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
     public static final String SESSION_NOTE_DELEGATION_JSON = "delegation_json";
     public static final String SUBJECT_TOKEN_PARAM = "subject_token";
     private final KeycloakSession session;
+
+    private static final org.jboss.logging.Logger logger = org.jboss.logging.Logger
+            .getLogger(DelegationTokenExchangeProvider.class);
 
     // per-request cached value
     private String delegationJson;
@@ -59,80 +68,86 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
                 .users()
                 .getServiceAccount(client);
 
-
-        return  delegationParamPresent;
+        return delegationParamPresent;
     }
 
     @Override
     public Response exchange(TokenExchangeContext context) {
 
-        String delegationContextEncoded = context.getFormParams().getFirst(PARAM_DELEGATION_CONTEXT);
+        MultivaluedMap<String, String> form = context.getFormParams();
+
+        // ------------------------------------------------------------------
+        // 1. Extract parameters
+        // ------------------------------------------------------------------
+
+        String subjectToken = form.getFirst("subject_token");
+        String delegationContextEncoded = form.getFirst("delegation_context");
+
+        if (subjectToken == null || subjectToken.isBlank()) {
+            throw new BadRequestException("Missing subject_token");
+        }
 
         if (delegationContextEncoded == null || delegationContextEncoded.isBlank()) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Missing delegation_context")
-                    .build();
+            throw new BadRequestException("Missing delegation_context");
         }
 
-        DelegationContext d = DelegationContext.fromBase64Url(delegationContextEncoded);
+        // ------------------------------------------------------------------
+        // 2. Validate subject_token (LET KEYCLOAK DO THE HEAVY LIFTING)
+        // ------------------------------------------------------------------
 
-        if (d.getExpiresAt() != 0 &&
-                d.getExpiresAt() < Instant.now().getEpochSecond()) {
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity("Delegation expired")
-                    .build();
-        }
-
-        RealmModel realm = session.getContext().getRealm();
-        ClientModel targetClient = context.getClient();
-
-        // Resolve delegation-zone users
-
-        UserModel delegatorUserId = session.users().getUserById(realm, d.getDelegatorUserId());
-        UserModel delegateUserId = session.users().getUserById(realm, d.getDelegateUserId());
-
-        // Verify delegate == subject token user
-
-        String subjectTokenString = context.getFormParams().getFirst(SUBJECT_TOKEN_PARAM);
-
+        AccessToken subject;
         try {
+            subject = AuthTokenHelper.verifySubjectToken(context.getSession(), subjectToken);
 
-            if (subjectTokenString == null || subjectTokenString.isBlank()) {
-                throw new OAuthErrorException(
-                        OAuthErrorException.INVALID_REQUEST,
-                        "Missing subject_token");
-            }
-
-            AccessToken subjectAccessToken = AuthTokenHelper.verifySubjectToken(
-                    realm,
-                    session,
-                    subjectTokenString);
-                    
-            String userIdString = subjectAccessToken.getSubject();
-            if (!delegateUserId.getId().equals(userIdString)) {
-                throw new OAuthErrorException(
-                        OAuthErrorException.INVALID_REQUEST,
-                        "subject_token user does not match delegate user");
-            }
-
-        } catch (VerificationException | OAuthErrorException e) {
-            throw new IllegalArgumentException("Invalid subject_token", e);
+        } catch (OAuthErrorException e) {
+            throw new NotAuthorizedException("subject_token invalid", e);
         }
 
-        // Get pairwise subs for target client (audience)
+        // ------------------------------------------------------------------
+        // 3. Parse delegation_context
+        // ------------------------------------------------------------------
 
-        String delegatorTargetSub = PairwiseUtil.getSubjectIdentifier(delegatorUserId, realm, targetClient);
-        String delegateTargetSub = PairwiseUtil.getSubjectIdentifier(delegateUserId, realm, targetClient);
+        DelegationContext delegation;
+        try {
+            delegation = DelegationContext.fromBase64Url(delegationContextEncoded);
 
-        DelegationContext translated = new DelegationContext(
-                d.getId(),
-                delegatorTargetSub,
-                delegateTargetSub,
-                d.getScope(),
-                d.getExpiresAt());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid delegation_context", e);
+        }
 
-        this.delegationJson = DelegationContext.toJsonString(translated);
+        // ------------------------------------------------------------------
+        // 4. Your delegation rules (THIS IS YOUR DOMAIN)
+        // ------------------------------------------------------------------
 
+        // Example: subject must match delegate_user_id
+        if (!subject.getSubject().equals(delegation.getDelegateUserId())) {
+            throw new ForbiddenException("Delegation subject mismatch");
+        }
+
+        // Example: expiry
+        if (delegation.getExpiresAt() != 0 &&
+                delegation.getExpiresAt() < (System.currentTimeMillis() / 1000)) {
+            throw new BadRequestException("delegation_context expired");
+        }
+
+        // ------------------------------------------------------------------
+        // 5. (Optional) Scope enforcement
+        // ------------------------------------------------------------------
+
+        if (delegation.getScope() != null && !delegation.getScope().isEmpty()) {
+
+            // You can enforce intersection with subject token scopes here
+            // (optional but recommended)
+
+        }
+
+        // ------------------------------------------------------------------
+        // 6. Continue with normal token exchange
+        // ------------------------------------------------------------------
+
+        // 🔥 IMPORTANT:
+        // At this point you should call into Keycloak’s normal token exchange
+        // OR build your own token
         return super.exchange(context);
     }
 
