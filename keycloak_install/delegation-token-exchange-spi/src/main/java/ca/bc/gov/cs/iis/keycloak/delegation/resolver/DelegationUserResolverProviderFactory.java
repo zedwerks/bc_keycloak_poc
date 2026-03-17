@@ -16,7 +16,7 @@ import org.keycloak.services.resource.RealmResourceProviderFactory;
 
 public class DelegationUserResolverProviderFactory implements RealmResourceProviderFactory {
 
-    public static final String ID = "iis-delegation-user-resolver";
+    public static final String ID = "delegation";
     private static final Logger logger = Logger.getLogger(DelegationUserResolverProviderFactory.class);
 
     @Override

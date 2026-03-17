@@ -1,5 +1,7 @@
 package ca.bc.gov.cs.iis.keycloak.auth;
 
+import org.jboss.logging.Logger;
+
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotAuthorizedException;
 import org.keycloak.TokenVerifier;
@@ -8,9 +10,26 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.models.KeyManager;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.common.VerificationException;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.TokenVerifier;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyWrapper;
+import java.security.PublicKey;
+
+import java.security.Key;
 import java.util.Objects;
 
 public final class AuthTokenHelper {
+
+    protected static final Logger logger = Logger.getLogger(AuthTokenHelper.class);
 
     private AuthTokenHelper() {
     }
@@ -21,18 +40,26 @@ public final class AuthTokenHelper {
     public static AccessToken verifyAccessToken(
             RealmModel realm,
             KeycloakSession session,
-            String token
-    ) throws VerificationException {
+            String token) throws VerificationException {
 
         if (token == null || token.isBlank()) {
             throw new VerificationException("Missing token");
         }
 
+        KeyWrapper key = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.RS256);
+
+        if (key == null || key.getPublicKey() == null) {
+            logger.warn("No active signing key found for realm: " + realm.getName());
+            throw new VerificationException("No active public key for realm");
+        }
+
+        PublicKey publicKey = (PublicKey) key.getPublicKey();
+
         AccessToken accessToken = TokenVerifier.create(token, AccessToken.class)
                 .withChecks(
                         TokenVerifier.IS_ACTIVE,
-                        TokenVerifier.SUBJECT_EXISTS_CHECK
-                )
+                        TokenVerifier.SUBJECT_EXISTS_CHECK)
+                .publicKey(publicKey)
                 .verify()
                 .getToken();
 
@@ -57,8 +84,7 @@ public final class AuthTokenHelper {
             RealmModel realm,
             KeycloakSession session,
             String bearerToken,
-            String requiredScope
-    ) throws VerificationException {
+            String requiredScope) throws VerificationException {
 
         AccessToken token = verifyAccessToken(realm, session, bearerToken);
 
@@ -76,8 +102,7 @@ public final class AuthTokenHelper {
     public static AccessToken verifySubjectToken(
             RealmModel realm,
             KeycloakSession session,
-            String subjectToken
-    ) throws VerificationException {
+            String subjectToken) throws VerificationException {
 
         return verifyAccessToken(realm, session, subjectToken);
     }

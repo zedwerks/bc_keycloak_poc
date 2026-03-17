@@ -8,7 +8,7 @@ resource "keycloak_openid_client" "client_b" {
   implicit_flow_enabled        = false
   standard_flow_enabled        = true
   service_accounts_enabled     = false
-  valid_redirect_uris          = ["http://127.0.0.1:3001/callback"]
+  valid_redirect_uris          = ["https://127.0.0.1:3001/callback"]
   base_url                     = "https://localhost:8888"
   web_origins                  = []
   full_scope_allowed           = false
@@ -34,9 +34,9 @@ resource "keycloak_openid_client_default_scopes" "client_b_default_scopes" {
 resource "keycloak_openid_client_optional_scopes" "client_b_optional_scopes" {
   realm_id  = keycloak_realm.target.realm
   client_id = keycloak_openid_client.client_b.id
-  optional_scopes = ["profile", keycloak_openid_client_scope.fin_cra_taxes_read.id,
-  keycloak_openid_client_scope.sdpr_myss_case_read.id]
-  depends_on = [keycloak_openid_client.client_b]
+  optional_scopes = ["profile", keycloak_openid_client_scope.fin_cra_taxes_read.name,
+  keycloak_openid_client_scope.sdpr_myss_case_read.name]
+  depends_on = [keycloak_openid_client.client_b, keycloak_openid_client_scope.fin_cra_taxes_read, keycloak_openid_client_scope.sdpr_myss_case_read]
 }
 
 /* Need this to allow Kong to perform token exchange. Kong must me an audience of the

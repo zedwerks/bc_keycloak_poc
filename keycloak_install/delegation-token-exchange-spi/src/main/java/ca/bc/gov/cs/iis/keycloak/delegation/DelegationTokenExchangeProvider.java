@@ -20,6 +20,7 @@ import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 
 import ca.bc.gov.cs.iis.keycloak.ppid.PairwiseUtil;
+import ca.bc.gov.cs.iis.keycloak.auth.AuthTokenHelper;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -35,7 +36,6 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
     public static final String PARAM_DELEGATION_CONTEXT = "delegation_context";
     public static final String SESSION_NOTE_DELEGATION_JSON = "delegation_json";
     public static final String SUBJECT_TOKEN_PARAM = "subject_token";
-    public static final String SERVICE_ROLE = "iis:delegation:service";
     private final KeycloakSession session;
 
     // per-request cached value
@@ -59,10 +59,8 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
                 .users()
                 .getServiceAccount(client);
 
-        boolean delegationAllowed = serviceAccount.hasRole(
-                context.getRealm().getRole(SERVICE_ROLE));
 
-        return delegationParamPresent || delegationAllowed;
+        return  delegationParamPresent;
     }
 
     @Override
@@ -105,11 +103,11 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
                         "Missing subject_token");
             }
 
-            AccessToken subjectAccessToken = TokenVerifier
-                    .create(subjectTokenString, AccessToken.class)
-                    .withDefaultChecks()
-                    .verify()
-                    .getToken();
+            AccessToken subjectAccessToken = AuthTokenHelper.verifySubjectToken(
+                    realm,
+                    session,
+                    subjectTokenString);
+                    
             String userIdString = subjectAccessToken.getSubject();
             if (!delegateUserId.getId().equals(userIdString)) {
                 throw new OAuthErrorException(

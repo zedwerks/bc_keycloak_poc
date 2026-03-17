@@ -1,7 +1,7 @@
 meta {
   name: Mint Delegation Token
   type: http
-  seq: 2
+  seq: 3
 }
 
 post {
@@ -17,11 +17,11 @@ auth:basic {
 
 body:form-urlencoded {
   grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-  subject_token: {{client_a1_access_token}}
+  subject_token: {{delegate_access_token}}
   subject_token_type: urn:ietf:params:oauth:token-type:access_token
-  requested_subject: c6b74ddb-c49f-35ce-b176-7677c4325b0c
   requested_token_type: urn:ietf:params:oauth:token-type:access_token
   audience: client-b-rs
+  delegation_context: {{delegation_context}}
 }
 
 settings {

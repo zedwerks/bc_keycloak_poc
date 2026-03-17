@@ -1,6 +1,5 @@
 meta {
   name: Client A1
-  seq: 3
 }
 
 auth {
@@ -9,13 +8,13 @@ auth {
 
 auth:oauth2 {
   grant_type: authorization_code
-  callback_url: http://127.0.0.1:3001/callback
+  callback_url: {{redirect_uri}}
   authorization_url: {{keycloak_realm_uri}}/protocol/openid-connect/auth
   access_token_url: {{keycloak_realm_uri}}/protocol/openid-connect/token
   refresh_token_url: 
   client_id: {{client_a1}}
   client_secret: {{client_a1_secret}}
-  scope: fin:cra:taxes:read
+  scope: openid
   state: 
   pkce: true
   credentials_placement: body
@@ -24,10 +23,4 @@ auth:oauth2 {
   token_header_prefix: Bearer
   auto_fetch_token: true
   auto_refresh_token: false
-}
-
-tests {
-  
-  
-  
 }

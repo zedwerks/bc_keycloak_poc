@@ -12,9 +12,9 @@ post {
 
 body:form-urlencoded {
   grant_type: refresh_token
-  refresh_token: {{refresh_token_client_a1}}
-  client_id: {{client_a1}}
-  client_secret: {{client_a1_secret}}
+  refresh_token: {{$oauth2.credentials-delegate.refresh_token}}
+  client_id: {{client_b}}
+  ~client_secret: 
 }
 
 vars:pre-request {
@@ -31,13 +31,13 @@ script:post-response {
   }
   
   // Save token under a CLIENT-SPECIFIC name
-  bru.setEnvVar("client_a1_access_token", body.access_token);
+  bru.setEnvVar("delegate_access_token", body.access_token);
   
   // Optional: save other useful fields
-  bru.setEnvVar("client_a1_refresh_token", body.refresh_token);
+  bru.setEnvVar("delegate_refresh_token", body.refresh_token);
   
   // Debug log
-  console.log("Client A access token saved");
+  console.log("Delegate (Client B) access token saved");
   
   function base64UrlDecode(str) {
     str = str.replace(/-/g, '+').replace(/_/g, '/');

@@ -2,7 +2,9 @@ package ca.bc.gov.cs.iis.keycloak.delegation;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -77,15 +79,45 @@ public class DelegationContext {
         this.expiresAt = expiresAt;
     }
 
-    public static DelegationContext fromBase64Url(String encoded) {
-        try {
-            byte[] decoded = Base64.getUrlDecoder().decode(encoded);
-            String json = new String(decoded, StandardCharsets.UTF_8);
-            return new ObjectMapper().readValue(json, DelegationContext.class);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid encoded delegation", e);
-        }
+private static final ObjectMapper MAPPER = new ObjectMapper()
+    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+
+public static DelegationContext fromBase64Url(String encoded) {
+
+    if (encoded == null || encoded.isBlank()) {
+        throw new IllegalArgumentException("delegation_context is missing");
     }
+
+    final byte[] decoded;
+    try {
+        decoded = Base64.getUrlDecoder().decode(encoded);
+    } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException("Invalid base64url encoding", e);
+    }
+
+    try {
+        String json = new String(decoded, StandardCharsets.UTF_8);
+
+        DelegationContext ctx = MAPPER.readValue(json, DelegationContext.class);
+
+        // 🔐 minimal validation (you can expand this)
+        if (ctx.getDelegateUserId() == null || ctx.getDelegatorUserId() == null) {
+            throw new IllegalArgumentException("Missing required delegation fields");
+        }
+
+        if (ctx.getExpiresAt() != 0 && ctx.getExpiresAt() < (System.currentTimeMillis() / 1000)) {
+            throw new IllegalArgumentException("Delegation context is expired");
+        }
+
+        return ctx;
+
+    } catch (JsonProcessingException e) {
+        throw new IllegalArgumentException(
+            "Invalid delegation JSON: " + e.getOriginalMessage(), e
+        );
+    }
+}
 
     public static String toJsonString(DelegationContext context) {
         try {

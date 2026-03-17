@@ -1,0 +1,58 @@
+meta {
+  name: Resolve Delegate User ID
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{keycloak_realm_uri}}/delegation/resolve-user
+  body: formUrlEncoded
+  auth: inherit
+}
+
+body:form-urlencoded {
+  subject_token: {{delegate_access_token}}
+}
+
+script:post-response {
+  // Ensure response is JSON
+  const body = res.getBody();
+  
+  // Validate token exists
+  if (!body.user_id) {
+    throw new Error("No user_id found in response");
+  }
+  
+  // Save delegate user identifier.
+  // we will need this for building up the delegation
+  // context json.
+  bru.setEnvVar("delegate_user_id", body.user_id);
+  
+  const exp = Math.floor(Date.now() / 1000) + (30 * 60);
+  
+  // Now let's build the delegation_context
+  const delegationContext = {
+    delegate_user_id: bru.getEnvVar("delegate_user_id"),
+    delegator_user_id: bru.getEnvVar("delegator_user_id"),
+    scope: ["fin:cra:taxes:read"],
+    expires_at: exp
+  };
+  
+  const json = JSON.stringify(delegationContext);
+  
+  console.log(json);
+  
+  const b64url = Buffer.from(json)
+    .toString("base64")
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+  
+  bru.setEnvVar("delegation_context", b64url);
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
