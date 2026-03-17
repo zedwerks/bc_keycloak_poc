@@ -1,17 +1,17 @@
 resource "keycloak_openid_client" "client_b" {
-  realm_id                        = keycloak_realm.target.realm
-  client_id                       = "client-b"
-  name                            = "Client B (User app))"
-  enabled                         = true
-  access_type                     = "PUBLIC"
-  direct_access_grants_enabled    = false
-  implicit_flow_enabled           = false
-  standard_flow_enabled           = true
-  service_accounts_enabled        = false
-  valid_redirect_uris             = ["http://127.0.0.1:3001/callback"]
-  base_url                        = "https://localhost:8888"
-  web_origins                     = []
-  full_scope_allowed              = false
+  realm_id                     = keycloak_realm.target.realm
+  client_id                    = "client-b"
+  name                         = "Client B (User app))"
+  enabled                      = true
+  access_type                  = "PUBLIC"
+  direct_access_grants_enabled = false
+  implicit_flow_enabled        = false
+  standard_flow_enabled        = true
+  service_accounts_enabled     = false
+  valid_redirect_uris          = ["http://127.0.0.1:3001/callback"]
+  base_url                     = "https://localhost:8888"
+  web_origins                  = []
+  full_scope_allowed           = false
 
   oauth2_device_authorization_grant_enabled = false
 
@@ -32,12 +32,11 @@ resource "keycloak_openid_client_default_scopes" "client_b_default_scopes" {
 }
 
 resource "keycloak_openid_client_optional_scopes" "client_b_optional_scopes" {
-  realm_id        = keycloak_realm.target.realm
-  client_id       = keycloak_openid_client.client_b.id
-  optional_scopes = ["profile", keycloak_openid_client_scope.read_finance.name, keycloak_openid_client_scope.read_sdpr.name]
-  depends_on      = [keycloak_openid_client.client_b, 
-    keycloak_openid_client_scope.read_finance,
-    keycloak_openid_client_scope.read_sdpr]
+  realm_id  = keycloak_realm.target.realm
+  client_id = keycloak_openid_client.client_b.id
+  optional_scopes = ["profile", keycloak_openid_client_scope.fin_cra_taxes_read.id,
+  keycloak_openid_client_scope.sdpr_myss_case_read.id]
+  depends_on = [keycloak_openid_client.client_b]
 }
 
 /* Need this to allow Kong to perform token exchange. Kong must me an audience of the

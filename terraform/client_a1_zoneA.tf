@@ -44,9 +44,9 @@ resource "keycloak_openid_client_default_scopes" "client_a1_default_scopes" {
 resource "keycloak_openid_client_optional_scopes" "client_a1_optional_scopes" {
   realm_id        = keycloak_realm.target.realm
   client_id       = keycloak_openid_client.client_a1.id
-  optional_scopes = ["profile", keycloak_openid_client_scope.read_sdpr.name, keycloak_openid_client_scope.read_finance.name]
-  depends_on      = [keycloak_openid_client.client_a1, keycloak_openid_client_scope.read_sdpr,
-    keycloak_openid_client_scope.read_finance]
+  optional_scopes = ["profile", keycloak_openid_client_scope.sdpr_myss_case_read.id, 
+    keycloak_openid_client_scope.fin_cra_taxes_read.id]
+  depends_on      = [keycloak_openid_client.client_a1]
 }
 
 

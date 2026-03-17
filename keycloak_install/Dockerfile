@@ -5,13 +5,20 @@
 # ----------------------------------------------------------------------------
 
 # Build Stage
-#FROM maven:3.8.3-openjdk-11-slim AS builder
 FROM maven:3.9.11-eclipse-temurin-21 AS builder
 
 # Set the working directory in the container
 WORKDIR /workspace
 # Copy the files needed
 COPY keycloak/ /workspace/keycloak/
+
+COPY delegation-token-exchange-spi/pom.xml ./delegation-token-exchange-spi/
+COPY delegation-token-exchange-spi/src ./delegation-token-exchange-spi/src
+
+# Build the SPI module
+WORKDIR /workspace/delegation-token-exchange-spi
+RUN mvn clean package -DskipTests
+
 
 ## =================================================================================================
 # Package Stage - add to an official Keycloak image
@@ -52,6 +59,9 @@ RUN chmod +x /opt/keycloak/bin/bootstrap.sh
 RUN chown keycloak:root -R /opt/keycloak/bin/ /opt/keycloak/data/import/
 
 USER keycloak
+
+# Copy the SMART on FHIR SPI Jar to the providers folder
+COPY --from=builder /workspace/delegation-token-exchange-spi/target/*.jar /opt/keycloak/providers/
 
 # Expose the port if needed
 EXPOSE $KEYCLOAK_PORT

@@ -26,11 +26,11 @@ resource "keycloak_openid_client_optional_scopes" "client_kong_optional_scopes" 
   optional_scopes = ["profile", 
   keycloak_openid_client_scope.scope_ppid_sector_a.name, 
   keycloak_openid_client_scope.scope_ppid_sector_b.name, 
-  keycloak_openid_client_scope.read_finance.name, 
-  keycloak_openid_client_scope.read_sdpr.name]
+  keycloak_openid_client_scope.fin_cra_taxes_read.name, 
+  keycloak_openid_client_scope.sdpr_myss_case_read.name]
   depends_on      = [keycloak_openid_client.client_kong, 
-    keycloak_openid_client_scope.read_finance,
-    keycloak_openid_client_scope.read_sdpr,
+    keycloak_openid_client_scope.fin_cra_taxes_read,
+    keycloak_openid_client_scope.sdpr_myss_case_read,
     keycloak_openid_client_scope.scope_ppid_sector_a,
     keycloak_openid_client_scope.scope_ppid_sector_b]
 }
