@@ -6,6 +6,8 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
@@ -21,6 +23,23 @@ public class UserResolverImpl implements UserResolver {
 
     public UserResolverImpl(KeycloakSession session) {
         this.session = session;
+    }
+
+    @Override
+    public UserModel resolveUserFromToken(RealmModel realm, AccessToken subjectAccessToken) {
+
+        String sessionId = subjectAccessToken.getSessionId();
+
+        if (sessionId == null || sessionId.isBlank()) {
+            logger.warn("Session ID not found in token; unable to resolve user");
+            return null; // no session, can't resolve user
+        }
+        UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
+        if (userSession == null) {
+            return null; // no active session, can't resolve user
+        }
+
+        return userSession.getUser();
     }
 
     @Override
