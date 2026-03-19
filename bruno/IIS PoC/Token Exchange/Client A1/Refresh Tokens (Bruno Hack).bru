@@ -55,6 +55,7 @@ script:post-response {
   const decodedPayload = JSON.parse(base64UrlDecode(payload));
   
   console.log(JSON.stringify(decodedPayload, null, 2));
+  console.log("Delegate [Sector B] sub: ", decodedPayload.sub);
   
 }
 

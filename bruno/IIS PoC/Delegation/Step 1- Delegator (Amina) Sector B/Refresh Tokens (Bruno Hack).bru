@@ -13,8 +13,7 @@ post {
 body:form-urlencoded {
   grant_type: refresh_token
   refresh_token: {{$oauth2.credentials-delegator.refresh_token}}
-  client_id: {{client_a1}}
-  client_secret: {{client_a1_secret}}
+  client_id: {{client_b}}
 }
 
 vars:pre-request {
@@ -37,7 +36,7 @@ script:post-response {
   bru.setEnvVar("delegator_refresh_token", body.refresh_token);
   
   // Debug log
-  console.log("Delegator (Client A) access token saved");
+  console.log("Delegator (Sector B) access token saved");
   
   function base64UrlDecode(str) {
     str = str.replace(/-/g, '+').replace(/_/g, '/');
@@ -55,6 +54,7 @@ script:post-response {
   const decodedPayload = JSON.parse(base64UrlDecode(payload));
   
   console.log(JSON.stringify(decodedPayload, null, 2));
+  console.log("Delegator [Sector B] sub: ", decodedPayload.sub);
   
 }
 

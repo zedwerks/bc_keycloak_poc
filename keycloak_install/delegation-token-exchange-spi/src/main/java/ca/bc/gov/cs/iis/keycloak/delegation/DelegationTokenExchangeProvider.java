@@ -25,7 +25,7 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
 
     public static final String PARAM_DELEGATION_CONTEXT = "delegation_context";
     public static final String SUBJECT_TOKEN_PARAM = "subject_token";
-    private static final String ACT_SESSION_NOTE_CLAIM = "act";
+    public static final String ACT_SESSION_NOTE_CLAIM = "delegation-act-claim";
 
     private final KeycloakSession session;
 

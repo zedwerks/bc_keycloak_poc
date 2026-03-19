@@ -25,7 +25,7 @@ public class ActClaimProtocolMapper extends AbstractOIDCProtocolMapper
     private static final Logger logger = Logger.getLogger(ActClaimProtocolMapper.class);
 
     public static final String PROVIDER_ID = "oidc-act-claim-protocol-mapper";
-    public static final String ACT_SESSION_NOTE_CLAIM = "act";
+    public static final String ACT_SESSION_NOTE_CLAIM = "delegation-act-claim";
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
