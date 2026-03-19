@@ -1,5 +1,5 @@
 meta {
-  name: Step 1: Delegator (Amina) Sector A
+  name: Step 2: Delegate  Login (Alice) Sector A
 }
 
 auth {
@@ -14,17 +14,17 @@ auth:oauth2 {
   refresh_token_url: 
   client_id: {{client_a1}}
   client_secret: {{client_a1_secret}}
-  scope: openid
+  scope: openid fin:cra:taxes:read
   state: 
   pkce: true
   credentials_placement: body
-  credentials_id: credentials-delegator
+  credentials_id: credentials-delegate
   token_placement: header
   token_header_prefix: Bearer
-  auto_fetch_token: true
+  auto_fetch_token: false
   auto_refresh_token: false
 }
 
 auth:oauth2:additional_params:auth_req:queryparams {
-  login_hint: amina
+  login_hint: alice
 }

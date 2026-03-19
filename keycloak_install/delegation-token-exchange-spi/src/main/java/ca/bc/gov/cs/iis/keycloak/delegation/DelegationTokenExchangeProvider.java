@@ -148,10 +148,19 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
             ClientModel client,
             String scope) {
 
-        if (targetUserSession != null && this.actClaimJson != null) {
-            targetUserSession.setNote(ACT_SESSION_NOTE_CLAIM, this.actClaimJson);
+        AuthenticationSessionModel authSession = super.createSessionModel(targetUserSession, rootAuthSession,
+                targetUser, client, scope);
+
+        if (this.actClaimJson != null) {
+            // Best place: propagate into the eventual user session via auth session
+            authSession.setUserSessionNote(ACT_SESSION_NOTE_CLAIM, this.actClaimJson);
+
+            // Defensive: if a target session already exists, set it there too
+            if (targetUserSession != null) {
+                targetUserSession.setNote(ACT_SESSION_NOTE_CLAIM, this.actClaimJson);
+            }
         }
 
-        return super.createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
+        return authSession;
     }
 }

@@ -36,7 +36,9 @@ resource "keycloak_openid_client_optional_scopes" "client_b_optional_scopes" {
   client_id = keycloak_openid_client.client_b.id
   optional_scopes = ["profile", keycloak_openid_client_scope.fin_cra_taxes_read.name,
   keycloak_openid_client_scope.sdpr_myss_case_read.name]
-  depends_on = [keycloak_openid_client.client_b, keycloak_openid_client_scope.fin_cra_taxes_read, keycloak_openid_client_scope.sdpr_myss_case_read]
+  depends_on = [keycloak_openid_client.client_b,
+    keycloak_openid_client_scope.fin_cra_taxes_read,
+  keycloak_openid_client_scope.sdpr_myss_case_read]
 }
 
 /* Need this to allow Kong to perform token exchange. Kong must me an audience of the
@@ -48,6 +50,19 @@ resource "keycloak_openid_audience_protocol_mapper" "client_b_kong_audience_mapp
   name                     = "client-b-audience-mapper"
   included_custom_audience = keycloak_openid_client.client_kong.client_id
   add_to_access_token      = true
-  add_to_id_token          = true
+  add_to_id_token          = false
   depends_on               = [keycloak_openid_client.client_kong]
+}
+
+/* Need this to allow Delegate Service to perform token exchange. Delegate Service must be an audience of the
+ * token to be exchanged.
+ */
+resource "keycloak_openid_audience_protocol_mapper" "client_b_delegate_svc_audience_mapper" {
+  realm_id                 = keycloak_realm.target.realm
+  client_id                = keycloak_openid_client.client_b.id
+  name                     = "client-b-delegate-svc-audience-mapper"
+  included_custom_audience = keycloak_openid_client.client_delegate_svc.client_id
+  add_to_access_token      = true
+  add_to_id_token          = false
+  depends_on               = [keycloak_openid_client.client_delegate_svc]
 }

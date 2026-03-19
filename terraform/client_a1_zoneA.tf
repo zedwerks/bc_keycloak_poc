@@ -58,7 +58,20 @@ resource "keycloak_openid_audience_protocol_mapper" "client_a1k_audience_mapper"
   name                     = "client-a1-kong-audience-mapper"
   included_custom_audience = keycloak_openid_client.client_kong.client_id
   add_to_access_token      = true
-  add_to_id_token          = true
+  add_to_id_token          = false
   depends_on               = [keycloak_openid_client.client_kong]
+}
+
+/* Need this to allow Delegate Service to perform token exchange. Delegate Service must be an audience of the
+ * token to be exchanged.
+ */
+resource "keycloak_openid_audience_protocol_mapper" "client_a1_delegate_svc_audience_mapper" {
+  realm_id                 = keycloak_realm.target.realm
+  client_id                = keycloak_openid_client.client_a1.id
+  name                     = "client-a1-delegate-svc-audience-mapper"
+  included_custom_audience = keycloak_openid_client.client_delegate_svc.client_id
+  add_to_access_token      = true
+  add_to_id_token          = false
+  depends_on               = [keycloak_openid_client.client_delegate_svc]
 }
 
