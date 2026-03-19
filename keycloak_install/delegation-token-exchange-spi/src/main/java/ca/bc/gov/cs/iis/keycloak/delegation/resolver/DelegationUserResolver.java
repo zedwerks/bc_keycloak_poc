@@ -25,7 +25,10 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.common.VerificationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.OAuthErrorException;
 
 public class DelegationUserResolver {
 
@@ -55,6 +58,8 @@ public class DelegationUserResolver {
         try {
             RealmModel realm = session.getContext().getRealm();
 
+            UserResolver userResolver = new UserResolverImpl(this.session);
+
             String subjectTokenString = form.getFirst(PARAM_SUBJECT_TOKEN);
             if (subjectTokenString == null) {
                 logger.warn("Missing subject_token parameter");
@@ -79,7 +84,22 @@ public class DelegationUserResolver {
                     subjectTokenString);
 
             // 4️⃣ Resolve user id
-            userId = subjectAccessToken.getSubject();
+            String sessionId = subjectAccessToken.getSessionId();
+            if (sessionId == null || sessionId.isBlank()) {
+                logger.warn("Session ID not found in subject_token");
+                throw new NotFoundException("Session ID not found in subject_token");
+            }
+            UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
+            if (userSession == null) {
+                throw new NotFoundException("No active user session for subject_token");
+            }
+
+            UserModel user = userResolver.resolveUserFromToken(realm, subjectAccessToken);
+            if (user == null) {
+                throw new NotFoundException("Unable to resolve user from subject_token");
+            }
+
+            userId = user.getId();
 
             if (userId == null) {
                 logger.warn("User not found in subject_token");
@@ -89,13 +109,13 @@ public class DelegationUserResolver {
             Map<String, Object> response = Map.of(RESPONSE_USER_ID_FIELD, userId);
             return Response.ok(response).build();
 
-        } catch (NotAuthorizedException e) {
+        } catch (OAuthErrorException | NotAuthorizedException e) {
             logger.warn("Invalid bearer token", e);
             throw new NotAuthorizedException("Invalid or missing bearer token", e);
 
         } catch (ForbiddenException e) {
             logger.warn("Caller does not have required role", e);
-            throw e; 
+            throw e;
 
         } catch (NotFoundException e) {
             logger.warn("User not found", e);

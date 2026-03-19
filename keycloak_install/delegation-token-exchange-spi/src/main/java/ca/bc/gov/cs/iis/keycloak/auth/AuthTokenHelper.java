@@ -32,25 +32,21 @@ public class AuthTokenHelper {
             RealmModel realm,
             KeycloakSession session,
             String tokenString,
-            String requiredRole) throws OAuthErrorException {
+            String requiredScope) throws OAuthErrorException {
 
         AccessToken token = verifyAccessToken(session, tokenString);
 
-        if (requiredRole != null &&
-                (token.getRealmAccess() == null ||
-                        !token.getRealmAccess().isUserInRole(requiredRole))) {
-
-            throw new OAuthErrorException(
-                    OAuthErrorException.ACCESS_DENIED,
-                    "Caller is missing required role.");
+        if (requiredScope != null && !requiredScope.isEmpty()) {
+            if (token.getScope() == null || !token.getScope().contains(requiredScope)) {
+                throw new OAuthErrorException(
+                        OAuthErrorException.ACCESS_DENIED,
+                        "Caller is missing required scope.");
+            }
         }
 
         return token;
     }
 
-    /**
-     * Verify subject token (preferred signature)
-     */
     public static AccessToken verifySubjectToken(
             KeycloakSession session,
             String tokenString) throws OAuthErrorException {

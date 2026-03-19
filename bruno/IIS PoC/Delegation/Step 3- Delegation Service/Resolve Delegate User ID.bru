@@ -32,8 +32,13 @@ script:post-response {
   
   // Now let's build the delegation_context
   const delegationContext = {
-    delegate_user_id: bru.getEnvVar("delegate_user_id"),
-    delegator_user_id: bru.getEnvVar("delegator_user_id"),
+    delegate: {
+      user_id: bru.getEnvVar("delegate_user_id")
+    },
+    delegator: {
+      user_id: bru.getEnvVar("delegator_user_id")
+      
+    },
     scope: ["fin:cra:taxes:read"],
     expires_at: exp
   };

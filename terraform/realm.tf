@@ -8,4 +8,7 @@ resource "keycloak_realm" "target" {
   #attributes = {
   #  "pairwiseSubjectIdentifierEnabled" = "true"
   #}
+  attributes = {
+    "pairwiseSubSalt" = "86f09047-0025-4aa3-83f5-ff69905a0f3b" # do not change salt!!
+  }
 }
