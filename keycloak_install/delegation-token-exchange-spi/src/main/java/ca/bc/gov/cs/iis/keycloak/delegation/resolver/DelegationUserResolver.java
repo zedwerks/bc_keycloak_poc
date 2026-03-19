@@ -94,7 +94,11 @@ public class DelegationUserResolver {
                 throw new NotFoundException("No active user session for subject_token");
             }
 
-            UserModel user = userResolver.resolveUserFromToken(realm, subjectAccessToken);
+            UserModel user = subjectAccessToken.getSubject() != null
+                    ? session.users().getUserById(realm, subjectAccessToken.getSubject())
+                    : null;
+
+            //UserModel user = userResolver.resolveUserFromToken(realm, subjectAccessToken);
             if (user == null) {
                 throw new NotFoundException("Unable to resolve user from subject_token");
             }
