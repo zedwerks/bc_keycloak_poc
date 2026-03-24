@@ -17,13 +17,13 @@ resource "keycloak_openid_client" "client_kong" {
 resource "keycloak_openid_client_default_scopes" "client_kong_default_scopes" {
   realm_id       = keycloak_realm.target.realm
   client_id      = keycloak_openid_client.client_kong.id
-  default_scopes = ["profile"]
+  default_scopes = []
 }
 
 resource "keycloak_openid_client_optional_scopes" "client_kong_optional_scopes" {
   realm_id        = keycloak_realm.target.realm
   client_id       = keycloak_openid_client.client_kong.id
-  optional_scopes = ["web-origins", "roles",
+  optional_scopes = ["profile","web-origins", "roles",
   keycloak_openid_client_scope.scope_ppid_sector_a.name, 
   keycloak_openid_client_scope.scope_ppid_sector_b.name, 
   keycloak_openid_client_scope.fin_cra_taxes_read.name, 

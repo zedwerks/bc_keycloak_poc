@@ -1,15 +1,15 @@
 resource "keycloak_openid_client" "client_a_rs" {
-  realm_id                        = keycloak_realm.target.realm
-  client_id                       = "client-a-rs"
-  name                            = "Client A (Resource Server APIs)"
-  enabled                         = true
-  access_type                     = "CONFIDENTIAL"
-  client_secret                   = var.client_a_rs_secret
-  direct_access_grants_enabled    = false
-  implicit_flow_enabled           = false
-  standard_flow_enabled           = false
-  service_accounts_enabled        = true
-  full_scope_allowed              = false
+  realm_id                     = keycloak_realm.target.realm
+  client_id                    = "client-a-rs"
+  name                         = "Client A (Resource Server APIs)"
+  enabled                      = true
+  access_type                  = "CONFIDENTIAL"
+  client_secret                = var.client_a_rs_secret
+  direct_access_grants_enabled = false
+  implicit_flow_enabled        = false
+  standard_flow_enabled        = false
+  service_accounts_enabled     = true
+  full_scope_allowed           = false
 
   oauth2_device_authorization_grant_enabled = false
 
@@ -30,8 +30,11 @@ resource "keycloak_openid_client_default_scopes" "client_a_rs_default_scopes" {
 }
 
 resource "keycloak_openid_client_optional_scopes" "client_a_rs_optional_scopes" {
-  realm_id        = keycloak_realm.target.realm
-  client_id       = keycloak_openid_client.client_b_rs.id
-  optional_scopes = ["profile"]
-  depends_on      = [keycloak_openid_client.client_a_rs]
+  realm_id  = keycloak_realm.target.realm
+  client_id = keycloak_openid_client.client_a_rs.id
+  optional_scopes = ["profile", keycloak_openid_client_scope.sdpr_myss_case_read.name,
+  keycloak_openid_client_scope.fin_cra_taxes_read.name]
+  depends_on = [keycloak_openid_client.client_a_rs,
+    keycloak_openid_client_scope.sdpr_myss_case_read,
+  keycloak_openid_client_scope.fin_cra_taxes_read]
 }

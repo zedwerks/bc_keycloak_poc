@@ -1,5 +1,5 @@
 
-cd keycloak_install
+cd keycloak
 sh install.sh
 cd ../terraform
 source env/config.env

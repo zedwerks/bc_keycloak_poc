@@ -19,6 +19,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
+import java.util.List;
 import java.util.Objects;
 
 public final class DelegationTokenExchangeProvider extends StandardTokenExchangeProvider {
@@ -26,6 +27,7 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
     public static final String PARAM_DELEGATION_CONTEXT = "delegation_context";
     public static final String SUBJECT_TOKEN_PARAM = "subject_token";
     public static final String ACT_SESSION_NOTE_CLAIM = "delegation-act-claim";
+    private static final String DELEGATE_TYPE_SERVICE_ACCOUNT = "service_account";
 
     private final KeycloakSession session;
 
@@ -35,8 +37,8 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
      */
     private String actClaimJson;
 
-    private static final org.jboss.logging.Logger logger = org.jboss.logging.Logger
-            .getLogger(DelegationTokenExchangeProvider.class);
+    private static final org.jboss.logging.Logger logger =
+            org.jboss.logging.Logger.getLogger(DelegationTokenExchangeProvider.class);
 
     public DelegationTokenExchangeProvider(KeycloakSession session) {
         super();
@@ -94,9 +96,88 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
         RealmModel realm = context.getRealm();
         UserResolver userResolver = new UserResolverImpl(context.getSession());
 
-        UserModel delegateUser = session.users().getUserById(realm, delegation.getDelegate().getUserId());
-        if (delegateUser == null) {
-            throw new BadRequestException("Unknown delegate user");
+        if (delegation.getDelegate() == null) {
+            throw new BadRequestException("Missing delegate in delegation_context");
+        }
+
+        if (delegation.getDelegator() == null || delegation.getDelegator().getUserId() == null
+                || delegation.getDelegator().getUserId().isBlank()) {
+            throw new BadRequestException("Missing delegator.userId in delegation_context");
+        }
+
+        boolean delegateIsServiceAccount =
+                DELEGATE_TYPE_SERVICE_ACCOUNT.equalsIgnoreCase(delegation.getDelegate().getType());
+
+        List<String> delegateClientIds = delegation.getDelegate().getClientIds();
+        boolean allowAnyServiceAccount =
+                delegateIsServiceAccount && (delegateClientIds == null || delegateClientIds.isEmpty());
+
+        // Resolve whether the subject token represents a service account.
+        String subjectClientId = subject.getIssuedFor();
+        ClientModel subjectClient = null;
+        boolean subjectIsServiceAccount = false;
+
+        if (subjectClientId != null && !subjectClientId.isBlank()) {
+            subjectClient = realm.getClientByClientId(subjectClientId);
+            subjectIsServiceAccount = subjectClient != null && subjectClient.isServiceAccountsEnabled();
+        }
+
+        UserModel delegateUser;
+
+        if (delegateIsServiceAccount) {
+            // Policy:
+            // 1. delegate.type=service_account and no/empty clientIds => any service account caller allowed
+            // 2. delegate.type=service_account and clientIds provided => caller must be one of those service account clients
+            //
+            // In both cases, the effective delegate user is the service account user represented by subject_token.
+
+            if (!subjectIsServiceAccount) {
+                throw new NotAuthorizedException(
+                        "delegation_context requires subject_token to represent a service account");
+            }
+
+            if (!allowAnyServiceAccount) {
+                if (delegateClientIds == null || !delegateClientIds.contains(subjectClientId)) {
+                    throw new NotAuthorizedException(
+                            "Service account not permitted for delegation: " + subjectClientId);
+                }
+            }
+
+            delegateUser = session.users().getServiceAccount(subjectClient);
+            if (delegateUser == null) {
+                throw new BadRequestException(
+                        "Unable to resolve service account user for client: " + subjectClientId);
+            }
+
+            logger.debugf(
+                    "Service account subject %s allowed by delegation policy (allowAny=%s)",
+                    subjectClientId,
+                    allowAnyServiceAccount);
+
+        } else {
+            // Non-service-account delegate resolution:
+            // Try as userId first.
+            delegateUser = null;
+
+            if (delegation.getDelegate().getUserId() != null
+                    && !delegation.getDelegate().getUserId().isBlank()) {
+                delegateUser = session.users().getUserById(realm, delegation.getDelegate().getUserId());
+            }
+
+            // If not found, optionally try resolving from the first configured clientId as a service account.
+            // This preserves your previous fallback behavior for non-service-account typed delegates.
+            if (delegateUser == null
+                    && delegateClientIds != null
+                    && !delegateClientIds.isEmpty()) {
+                ClientModel client = realm.getClientByClientId(delegateClientIds.get(0));
+                if (client != null && client.isServiceAccountsEnabled()) {
+                    delegateUser = session.users().getServiceAccount(client);
+                }
+            }
+
+            if (delegateUser == null) {
+                throw new BadRequestException("Unknown delegate (user or service account)");
+            }
         }
 
         UserModel delegatorUser = session.users().getUserById(realm, delegation.getDelegator().getUserId());
@@ -112,6 +193,7 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
         try {
             String delegateSubjectId = userResolver.computePairwiseSub(realm, targetClient, delegateUser);
             String delegatorSubjectId = userResolver.computePairwiseSub(realm, targetClient, delegatorUser);
+
             logger.infof(
                     "Delegation exchange: delegateSub=%s delegatorSub=%s audience=%s",
                     delegateSubjectId, delegatorSubjectId, audience);
@@ -124,8 +206,6 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
             logger.error("Failed to compute pairwise subject", e);
             throw new BadRequestException("Failed to compute pairwise subject", e);
         }
-        // serialize once here; createSessionModel() will attach it to the target user
-        // session
 
         try {
             return super.exchange(context);
@@ -148,14 +228,12 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
             ClientModel client,
             String scope) {
 
-        AuthenticationSessionModel authSession = super.createSessionModel(targetUserSession, rootAuthSession,
-                targetUser, client, scope);
+        AuthenticationSessionModel authSession = super.createSessionModel(
+                targetUserSession, rootAuthSession, targetUser, client, scope);
 
         if (this.actClaimJson != null) {
-            // Best place: propagate into the eventual user session via auth session
             authSession.setUserSessionNote(ACT_SESSION_NOTE_CLAIM, this.actClaimJson);
 
-            // Defensive: if a target session already exists, set it there too
             if (targetUserSession != null) {
                 targetUserSession.setNote(ACT_SESSION_NOTE_CLAIM, this.actClaimJson);
             }

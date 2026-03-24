@@ -1,0 +1,16 @@
+{
+    "id": "746a6b6a-1866-4716-86bf-9584fc69f080",
+    "delegate": {
+        "user_id": "746a6b6a-1866-4716-86bf-9584fc69f080"
+    },
+    "delegator": {
+        "user_id": "746a6b6a-1866-4716-86bf-9584fc69f080"
+    },
+    "scope": [
+        "fin:cra:taxes:read",
+        "sdpr:myss:case:write"
+    ],
+    "status": "active",
+    "purpose": "AFA Application",
+    "expires_at": 1774024830
+}

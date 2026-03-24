@@ -141,6 +141,20 @@ public class DelegationContext {
         @JsonProperty("user_id")
         private String userId;
 
+        @JsonProperty("type")
+        private String type;
+
+        public String getType() {
+            return type;
+        }
+
+        @JsonProperty("client_ids")
+        private List<String> clientIds;
+
+        public List<String> getClientIds() {
+            return clientIds;
+        }
+
         public Party() {
         }
 

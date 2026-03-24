@@ -30,16 +30,37 @@ public class UserResolverImpl implements UserResolver {
 
         String sessionId = subjectAccessToken.getSessionId();
 
-        if (sessionId == null || sessionId.isBlank()) {
-            logger.warn("Session ID not found in token; unable to resolve user");
-            return null; // no session, can't resolve user
-        }
-        UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
-        if (userSession == null) {
-            return null; // no active session, can't resolve user
+        // --- 1. Try normal user session resolution ---
+        if (sessionId != null && !sessionId.isBlank()) {
+            UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
+            if (userSession != null) {
+                return userSession.getUser();
+            }
         }
 
-        return userSession.getUser();
+        // --- 2. Fallback: resolve directly from token subject ---
+        String subject = subjectAccessToken.getSubject();
+        if (subject != null) {
+            UserModel user = session.users().getUserById(realm, subject);
+            if (user != null) {
+                return user;
+            }
+        }
+
+        // --- 3. Fallback: resolve as service account via client ---
+        String clientId = subjectAccessToken.getIssuedFor(); // azp
+        if (clientId != null) {
+            ClientModel client = realm.getClientByClientId(clientId);
+            if (client != null && client.isServiceAccountsEnabled()) {
+                UserModel serviceAccount = session.users().getServiceAccount(client);
+                if (serviceAccount != null) {
+                    return serviceAccount;
+                }
+            }
+        }
+
+        logger.warn("Unable to resolve user from token (no session, subject, or service account match)");
+        return null;
     }
 
     @Override
