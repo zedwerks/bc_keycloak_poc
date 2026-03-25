@@ -11,7 +11,7 @@ import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
+
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -21,6 +21,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import org.jboss.logging.Logger;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.models.RealmModel;
@@ -72,14 +74,12 @@ public class DelegationUserResolver {
 
             // 1️⃣ Verify caller token
             AccessToken callerToken = AuthTokenHelper.verifyCallerBearerToken(
-                    realm,
                     session,
                     bearerToken,
                     REQUIRED_SCOPE);
 
             // 3️⃣ Verify subject_token
-            AccessToken subjectAccessToken = AuthTokenHelper.verifySubjectToken(
-                    realm,
+            AccessToken subjectAccessToken = AuthTokenHelper.verifyAccessToken(
                     session,
                     subjectTokenString);
 

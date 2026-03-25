@@ -14,11 +14,11 @@ auth:oauth2 {
   refresh_token_url: 
   client_id: {{client_b}}
   client_secret: 
-  scope: openid
+  scope: profile
   state: 
   pkce: true
   credentials_placement: body
-  credentials_id: credentials-delegator
+  credentials_id: delegator-token
   token_placement: header
   token_header_prefix: Bearer
   auto_fetch_token: false

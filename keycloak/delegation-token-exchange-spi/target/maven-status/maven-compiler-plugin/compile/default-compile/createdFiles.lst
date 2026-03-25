@@ -1,5 +1,7 @@
 ca/bc/gov/cs/iis/keycloak/delegation/resolver/DelegationUserResolverProvider.class
+ca/bc/gov/cs/iis/keycloak/delegation/CustomTokenExchangeProvider.class
 ca/bc/gov/cs/iis/keycloak/delegation/resolver/UserResolverImpl.class
+ca/bc/gov/cs/iis/keycloak/delegation/CustomTokenExchangeProviderFactory.class
 ca/bc/gov/cs/iis/keycloak/delegation/DelegationTokenExchangeProviderFactory.class
 ca/bc/gov/cs/iis/keycloak/delegation/resolver/UserResolver.class
 ca/bc/gov/cs/iis/keycloak/auth/AuthTokenHelper.class

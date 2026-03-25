@@ -14,11 +14,11 @@ auth:oauth2 {
   refresh_token_url: 
   client_id: {{client_a1}}
   client_secret: {{client_a1_secret}}
-  scope: fin:cra:taxes:read
+  scope: fin:cra:taxes:read profile
   state: 
   pkce: true
   credentials_placement: body
-  credentials_id: credentials-delegate
+  credentials_id: delegate-token
   token_placement: header
   token_header_prefix: Bearer
   auto_fetch_token: false

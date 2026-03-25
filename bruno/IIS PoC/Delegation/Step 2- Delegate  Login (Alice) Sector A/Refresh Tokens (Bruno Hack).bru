@@ -12,7 +12,7 @@ post {
 
 body:form-urlencoded {
   grant_type: refresh_token
-  refresh_token: {{$oauth2.credentials-delegate.refresh_token}}
+  refresh_token: {{$oauth2.delegate-token.refresh_token}}
   client_id: {{client_a1}}
   client_secret: {{client_a1_secret}}
 }

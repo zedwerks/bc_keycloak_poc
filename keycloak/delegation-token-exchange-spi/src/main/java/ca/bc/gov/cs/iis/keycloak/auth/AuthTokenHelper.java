@@ -29,7 +29,6 @@ public class AuthTokenHelper {
      * Verify caller bearer token (delegation service)
      */
     public static AccessToken verifyCallerBearerToken(
-            RealmModel realm,
             KeycloakSession session,
             String tokenString,
             String requiredScope) throws OAuthErrorException {
@@ -47,44 +46,14 @@ public class AuthTokenHelper {
         return token;
     }
 
-    public static AccessToken verifySubjectToken(
-            KeycloakSession session,
-            String tokenString) throws OAuthErrorException {
-
-        if (tokenString == null || tokenString.isBlank()) {
-            throw new OAuthErrorException(
-                    OAuthErrorException.INVALID_REQUEST,
-                    "subject_token is missing");
-        }
-
-        try {
-            return verifyAccessToken(session, tokenString);
-
-        } catch (Exception e) {
-            throw new OAuthErrorException(
-                    OAuthErrorException.SERVER_ERROR,
-                    "Failed to process subject_token");
-        }
-    }
-
-    /**
-     * Backwards-compatible method (keeps your existing resolver working)
-     */
-    public static AccessToken verifySubjectToken(
-            RealmModel realm,
-            KeycloakSession session,
-            String tokenString) throws OAuthErrorException {
-
-        return verifySubjectToken(session, tokenString);
-    }
 
     /**
      * Core verification using Keycloak internals
      */
-    private static AccessToken verifyAccessToken(
+    public static AccessToken verifyAccessToken(
             KeycloakSession session,
-            String tokenString) throws OAuthErrorException {
+            String encodedTokenString) throws OAuthErrorException {
 
-        return session.tokens().decode(tokenString, AccessToken.class);
+        return session.tokens().decode(encodedTokenString, AccessToken.class);
     }
 }

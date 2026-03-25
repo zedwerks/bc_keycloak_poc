@@ -12,12 +12,8 @@ post {
 
 body:form-urlencoded {
   grant_type: refresh_token
-  refresh_token: {{$oauth2.credentials-delegator.refresh_token}}
+  refresh_token: {{$oauth2.delegator-token.refresh_token}}
   client_id: {{client_b}}
-}
-
-vars:pre-request {
-  refresh_token_client_a1: {{$oauth2.credentials.refresh_token}}
 }
 
 script:post-response {
@@ -55,6 +51,7 @@ script:post-response {
   
   console.log(JSON.stringify(decodedPayload, null, 2));
   console.log("Delegator [Sector B] sub: ", decodedPayload.sub);
+  bru.setEnvVar("amina-b-sub", decodedPayload.sub);
   
 }
 

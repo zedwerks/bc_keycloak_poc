@@ -76,7 +76,7 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
 
         AccessToken subject;
         try {
-            subject = AuthTokenHelper.verifySubjectToken(context.getSession(), subjectToken);
+            subject = AuthTokenHelper.verifyAccessToken(context.getSession(), subjectToken);
         } catch (OAuthErrorException e) {
             throw new NotAuthorizedException("subject_token invalid", e);
         }

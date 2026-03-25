@@ -8,15 +8,23 @@ resource "keycloak_openid_client" "client_delegate_svc" {
   direct_access_grants_enabled    = false
   service_accounts_enabled        = true
   standard_token_exchange_enabled = true
+  full_scope_allowed = false
 
   # REQUIRED
   oauth2_device_authorization_grant_enabled = false
 }
 
+resource "keycloak_openid_client_default_scopes" "client_delegate_svc_default_scopes" {
+  realm_id       = keycloak_realm.target.realm
+  client_id      = keycloak_openid_client.client_delegate_svc.id
+  default_scopes = ["acr"]
+  depends_on     = [keycloak_openid_client.client_delegate_svc]
+}
+
 resource "keycloak_openid_client_optional_scopes" "client_delegate_svc_optional_scopes" {
   realm_id  = keycloak_realm.target.realm
   client_id = keycloak_openid_client.client_delegate_svc.id
-  optional_scopes = [
+  optional_scopes = ["profile", "email",
     keycloak_openid_client_scope.delegate_resolve_user_id.name,
     keycloak_openid_client_scope.fin_cra_taxes_read.name,
     keycloak_openid_client_scope.sdpr_myss_case_read.name,

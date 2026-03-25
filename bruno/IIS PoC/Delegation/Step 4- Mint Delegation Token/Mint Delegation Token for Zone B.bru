@@ -1,7 +1,7 @@
 meta {
-  name: Token Exchange (Mint Delegation Token)
+  name: Mint Delegation Token for Zone B
   type: http
-  seq: 1
+  seq: 2
 }
 
 post {
@@ -12,13 +12,14 @@ post {
 
 body:form-urlencoded {
   grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-  subject_token: {{delegate_access_token}}
   client_id: {{client_d}}
   client_secret: {{client_d_secret}}
   audience: client-b-rs
-  scope: fin:cra:taxes:read ppid-sector-b delegation
-  delegation_context: {{delegation_context}}
+  scope: fin:cra:taxes:read ppid-sector-b delegation profile
+  delegation_contract: {{delegation_context}}
   requested_token_type: urn:ietf:params:oauth:token-type:access_token
+  subject_token: {{delegate_access_token}}
+  subject_token_type: urn:ietf:params:oauth:token-type:access_token
 }
 
 script:pre-request {
@@ -75,6 +76,10 @@ script:post-response {
   
   console.log("Kong was Minted (Token Exchange) the following Token:")
   console.log(JSON.stringify(decodedPayload, null, 2));
+  console.log('---------------');
+  console.log("Delegator Zone B sub=" + bru.getEnvVar("amina-b-sub"));
+  console.log("Minted Delegation token sub=" + decodedPayload.sub);
+  
 }
 
 settings {

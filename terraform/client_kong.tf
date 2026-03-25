@@ -17,22 +17,25 @@ resource "keycloak_openid_client" "client_kong" {
 resource "keycloak_openid_client_default_scopes" "client_kong_default_scopes" {
   realm_id       = keycloak_realm.target.realm
   client_id      = keycloak_openid_client.client_kong.id
-  default_scopes = []
+  default_scopes = ["acr"]
+  depends_on     = [keycloak_openid_client.client_kong]
 }
 
+
 resource "keycloak_openid_client_optional_scopes" "client_kong_optional_scopes" {
-  realm_id        = keycloak_realm.target.realm
-  client_id       = keycloak_openid_client.client_kong.id
-  optional_scopes = ["profile","web-origins", "roles",
-  keycloak_openid_client_scope.scope_ppid_sector_a.name, 
-  keycloak_openid_client_scope.scope_ppid_sector_b.name, 
-  keycloak_openid_client_scope.fin_cra_taxes_read.name, 
+  realm_id  = keycloak_realm.target.realm
+  client_id = keycloak_openid_client.client_kong.id
+  optional_scopes = ["profile", "email",
+    keycloak_openid_client_scope.scope_ppid_sector_a.name,
+    keycloak_openid_client_scope.scope_ppid_sector_b.name,
+    keycloak_openid_client_scope.fin_cra_taxes_read.name,
   keycloak_openid_client_scope.sdpr_myss_case_read.name]
-  depends_on      = [keycloak_openid_client.client_kong, 
+  depends_on = [
+    keycloak_openid_client.client_kong,
     keycloak_openid_client_scope.fin_cra_taxes_read,
     keycloak_openid_client_scope.sdpr_myss_case_read,
     keycloak_openid_client_scope.scope_ppid_sector_a,
-    keycloak_openid_client_scope.scope_ppid_sector_b]
+  keycloak_openid_client_scope.scope_ppid_sector_b]
 }
 
 
