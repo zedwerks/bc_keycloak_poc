@@ -15,10 +15,10 @@ public class DelegationContext {
     private String id;
 
     @JsonProperty("delegator")
-    private Party delegatorParty;
+    private Delegator delegatorParty;
 
     @JsonProperty("delegate")
-    private Party delegateParty;
+    private Delegate delegateParty;
 
     @JsonProperty("scope")
     private List<String> scope;
@@ -30,34 +30,15 @@ public class DelegationContext {
     public DelegationContext() {
     }
 
-    public DelegationContext(String id, Party delegatorParty, Party delegateParty, List<String> scope,
-            long expiresAt) {
-        this.id = id;
-        this.delegatorParty = delegatorParty;
-        this.delegateParty = delegateParty;
-        this.scope = scope;
-        this.expiresAt = expiresAt;
-    }
-
-    public DelegationContext(String id, String delegatorUserId, String delegateUserId, List<String> scope,
-            long expiresAt) {
-        this.id = id;
-        this.delegatorParty = new Party(delegatorUserId);
-        this.delegateParty = new Party(delegateUserId);
-        this.scope = scope;
-        this.expiresAt = expiresAt;
-    }
-
-
     public String getId() {
         return id;
     }
 
-    public Party getDelegator() {
+    public Delegator getDelegator() {
         return delegatorParty;
     }
 
-    public Party getDelegate() {
+    public Delegate getDelegate() {
         return delegateParty;
     }
 
@@ -73,11 +54,11 @@ public class DelegationContext {
         this.id = id;
     }
 
-    public void setDelegator(Party delegator) {
+    public void setDelegator(Delegator delegator) {
         this.delegatorParty = delegator;
     }
 
-    public void setDelegate(Party delegate) {
+    public void setDelegate(Delegate delegate) {
         this.delegateParty = delegate;
     }
 
@@ -136,30 +117,11 @@ public class DelegationContext {
         }
     }
 
-    public static class Party {
-
+    public static class Delegator {
         @JsonProperty("user_id")
         private String userId;
 
-        @JsonProperty("type")
-        private String type;
-
-        public String getType() {
-            return type;
-        }
-
-        @JsonProperty("client_ids")
-        private List<String> clientIds;
-
-        public List<String> getClientIds() {
-            return clientIds;
-        }
-
-        public Party() {
-        }
-
-        public Party(String userId) {
-            this.userId = userId;
+        public Delegator() {
         }
 
         public String getUserId() {
@@ -168,6 +130,20 @@ public class DelegationContext {
 
         public void setUserId(String userId) {
             this.userId = userId;
+        }
+    }
+
+    public static class Delegate extends Delegator {
+
+        @JsonProperty("service_account_client_id")
+        private String serviceAccountClientId;
+
+        public String getServiceAccountClientId() {
+            return serviceAccountClientId;
+        }
+
+        public Delegate() {
+            super();
         }
     }
 

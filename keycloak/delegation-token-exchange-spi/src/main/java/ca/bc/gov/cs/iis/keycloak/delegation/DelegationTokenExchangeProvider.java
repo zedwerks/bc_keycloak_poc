@@ -105,12 +105,9 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
             throw new BadRequestException("Missing delegator.userId in delegation_context");
         }
 
-        boolean delegateIsServiceAccount =
-                DELEGATE_TYPE_SERVICE_ACCOUNT.equalsIgnoreCase(delegation.getDelegate().getType());
+        boolean delegateIsServiceAccount = delegation.getDelegate().getServiceAccountClientId() != null;
 
-        List<String> delegateClientIds = delegation.getDelegate().getClientIds();
-        boolean allowAnyServiceAccount =
-                delegateIsServiceAccount && (delegateClientIds == null || delegateClientIds.isEmpty());
+        String delegateServiceAccountClientId = delegation.getDelegate().getServiceAccountClientId();
 
         // Resolve whether the subject token represents a service account.
         String subjectClientId = subject.getIssuedFor();
@@ -136,23 +133,13 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
                         "delegation_context requires subject_token to represent a service account");
             }
 
-            if (!allowAnyServiceAccount) {
-                if (delegateClientIds == null || !delegateClientIds.contains(subjectClientId)) {
-                    throw new NotAuthorizedException(
-                            "Service account not permitted for delegation: " + subjectClientId);
-                }
-            }
-
             delegateUser = session.users().getServiceAccount(subjectClient);
             if (delegateUser == null) {
                 throw new BadRequestException(
                         "Unable to resolve service account user for client: " + subjectClientId);
             }
 
-            logger.debugf(
-                    "Service account subject %s allowed by delegation policy (allowAny=%s)",
-                    subjectClientId,
-                    allowAnyServiceAccount);
+            logger.debugf( "Service account subject %s allowed by delegation policy", subjectClientId);
 
         } else {
             // Non-service-account delegate resolution:
@@ -164,12 +151,9 @@ public final class DelegationTokenExchangeProvider extends StandardTokenExchange
                 delegateUser = session.users().getUserById(realm, delegation.getDelegate().getUserId());
             }
 
-            // If not found, optionally try resolving from the first configured clientId as a service account.
-            // This preserves your previous fallback behavior for non-service-account typed delegates.
-            if (delegateUser == null
-                    && delegateClientIds != null
-                    && !delegateClientIds.isEmpty()) {
-                ClientModel client = realm.getClientByClientId(delegateClientIds.get(0));
+            // If not found, optionally try resolving from the configured clientId as a service account.
+            if (delegateUser == null && delegateServiceAccountClientId != null) {
+                ClientModel client = realm.getClientByClientId(delegateServiceAccountClientId);
                 if (client != null && client.isServiceAccountsEnabled()) {
                     delegateUser = session.users().getServiceAccount(client);
                 }
