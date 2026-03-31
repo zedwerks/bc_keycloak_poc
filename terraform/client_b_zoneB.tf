@@ -43,6 +43,7 @@ resource "keycloak_openid_client_optional_scopes" "client_b_optional_scopes" {
   keycloak_openid_client_scope.delegation_scope]
 }
 
+
 /* Need this to allow Kong to perform token exchange. Kong must me an audience of the
  * token to be exchanged.
  */

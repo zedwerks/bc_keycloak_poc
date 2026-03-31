@@ -24,8 +24,8 @@ public class ActClaimProtocolMapper extends AbstractOIDCProtocolMapper
 
     private static final Logger logger = Logger.getLogger(ActClaimProtocolMapper.class);
 
-    public static final String PROVIDER_ID = "oidc-act-claim-protocol-mapper";
-    public static final String ACT_SESSION_NOTE_CLAIM = "delegation-act-claim";
+    public static final String PROVIDER_ID = "oidc-delegation-act-claim-protocol-mapper";
+    public static final String ACT_CLIENT_SESSION_NOTE_MAPPER = "delegation-act-claim";
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
@@ -67,18 +67,18 @@ public class ActClaimProtocolMapper extends AbstractOIDCProtocolMapper
             KeycloakSession session,
             ClientSessionContext clientSessionCtx) {
 
-        if (userSession == null) {
+        if (clientSessionCtx == null) {
             return;
         }
 
-        String actJson = userSession.getNote(ACT_SESSION_NOTE_CLAIM);
+        String actJson = clientSessionCtx.getClientSession().getNote(ACT_CLIENT_SESSION_NOTE_MAPPER);
         if (actJson == null || actJson.isBlank()) {
             return;
         }
 
         try {
-            Map<String, Object> actMap =
-                    JsonSerialization.readValue(actJson, new TypeReference<Map<String, Object>>() {});
+            Map<String, Object> actMap = JsonSerialization.readValue(actJson, new TypeReference<Map<String, Object>>() {
+            });
 
             String claimName = mappingModel.getConfig() != null
                     ? mappingModel.getConfig().getOrDefault("claim.name", "act")

@@ -1,18 +1,18 @@
+# The delegation client scope
 resource "keycloak_openid_client_scope" "delegation_scope" {
-  realm_id = keycloak_realm.target.realm
-  name     = "delegation"
+  realm_id               = var.realm_id
+  name                   = "delegation"
+  description            = "Delegation token exchange scope - adds act claim to delegated tokens"
+  include_in_token_scope = true
 }
 
-resource "keycloak_openid_user_session_note_protocol_mapper" "act_claim" {
-  realm_id = keycloak_realm.target.realm
+# Register your custom DelegationActMapper on the scope
+resource "keycloak_generic_protocol_mapper" "delegation_act_mapper" {
+  realm_id    = keycloak_realm.target.realm
   client_scope_id = keycloak_openid_client_scope.delegation_scope.id
-  name = "act-claim-mapper"
-  claim_name = "act"
-  claim_value_type = "JSON"
-  session_note ="delegation-act-claim"
+  name            = "delegation-act-claim"
+  protocol        = "openid-connect"
+  protocol_mapper = "oidc-delegation-act-claim-protocol-mapper"   # matches Java code: ActClaimProtocolMapper.PROVIDER_ID
 
-  # 👇 Where it appears
-  add_to_access_token = true
-  add_to_id_token     = false
-  depends_on = [ keycloak_openid_client_scope.delegation_scope ]
+  config = {}   # your mapper has no config properties
 }

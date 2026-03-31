@@ -10,6 +10,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -248,7 +250,16 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
             String scope,
             AccessToken subjectToken) {
 
+        // `client` (from AbstractTokenExchangeProvider) is the client_id making
+        // the exchange request. Named explicitly to avoid confusion with audience.
         final ClientModel requestingClient = client;
+
+        // The first audience entry is the primary target client — named clearly
+        // to distinguish it from the requesting client.
+        final ClientModel targetClient = targetAudienceClients.get(0);
+
+        logger.debugf("Token exchange: requestingClient=%s, targetClient(audience)=%s",
+                requestingClient.getClientId(), targetClient.getClientId());
 
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
         final RootAuthenticationSessionModel rootAuthSession = asm.createAuthenticationSession(realm, false);
@@ -259,10 +270,6 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
                 targetUser,
                 requestingClient,
                 scope);
-
-        if (this.actClaimJson != null) {
-            this.persistDelegationNote(requestingClient, targetUserSession, this.actClaimJson);
-        }
 
         /**
          * Push audience and scope into the auth/user session notes using the
@@ -286,10 +293,21 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
             targetUserSession.setNote(PARAM_SCOPE, scope);
         }
 
+        // attachAuthenticationSession creates the AuthenticatedClientSessionModel
+        // for requestingClient on targetUserSession. Notes MUST be set after this
+        // call — the client session does not exist on targetUserSession before it.
         final ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(
                 session,
                 targetUserSession,
                 authSession);
+
+        // Safe to write notes now — AuthenticatedClientSessionModel exists.
+        // Also inject the delegation scope so DelegationActMapper fires without
+        // requiring the caller to pass scope=delegation explicitly.
+        if (this.actClaimJson != null) {
+            persistDelegationNote(requestingClient, targetUserSession, this.actClaimJson);
+            injectDelegationScope(requestingClient, targetUserSession);
+        }
 
         final boolean includeRefreshToken = REQUESTED_TOKEN_TYPE_REFRESH_TOKEN.equals(requestedTokenType);
 
@@ -412,23 +430,72 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
     }
 
     /**
-     * Call this inside your exchange() method once you have validated
-     * the delegation and resolved the delegate subject string.
+     * Persists the act claim JSON onto the AuthenticatedClientSessionModel for
+     * the requestingClient. Must be called AFTER TokenManager.attachAuthenticationSession()
+     * so the client session exists on the user session.
      *
-     * @param clientSessionCtx the ClientSessionContext from the exchange context
-     * @param delegateSubject  the subject (user ID) of the acting delegate
+     * Note: the note goes on the requestingClient's session (not the audience/targetClient)
+     * because that is the session that TokenManager.attachAuthenticationSession() creates
+     * and that clientSessionCtx wraps. The audience clients only appear in the token's
+     * aud claim — they do not have their own AuthenticatedClientSessionModel here.
      */
-    public static void persistDelegationNote(
-            ClientModel requestingClient, UserSessionModel userSession,
+    private static void persistDelegationNote(
+            ClientModel requestingClient,
+            UserSessionModel userSession,
             String delegationActJsonString) {
 
-        final AuthenticatedClientSessionModel clientSession = userSession
-                .getAuthenticatedClientSessionByClient(requestingClient.getId());
+        final AuthenticatedClientSessionModel clientSession =
+                userSession.getAuthenticatedClientSessionByClient(requestingClient.getId());
 
-        // This is the ONLY place to call setNote — on AuthenticatedClientSessionModel,
-        // NOT on ClientModel (which has no setNote method).
-        clientSession.setNote(
-                DelegationAwareTokenManager.DELEGATION_ACT_NOTE,
-                delegationActJsonString);
+        if (clientSession == null) {
+            throw new IllegalStateException(
+                    "AuthenticatedClientSessionModel not found for client '" +
+                    requestingClient.getClientId() +
+                    "' — call persistDelegationNote after attachAuthenticationSession");
+        }
+
+        clientSession.setNote("delegation.act", delegationActJsonString);
+        logger.debugf("Persisted delegation.act note on client session for client '%s'",
+                requestingClient.getClientId());
+    }
+
+    /**
+     * Injects the "delegation" client scope onto the requestingClient's
+     * AuthenticatedClientSessionModel so the DelegationActMapper fires
+     * without the caller needing to pass scope=delegation in the request.
+     *
+     * Keycloak's DefaultClientSessionContext resolves the active scope list
+     * by reading notes from the AuthenticatedClientSessionModel keyed by
+     * scope ID. Writing the note here is the correct internal mechanism for
+     * adding a scope programmatically after the session is created.
+     *
+     * Must be called AFTER TokenManager.attachAuthenticationSession().
+     */
+    private void injectDelegationScope(ClientModel requestingClient,
+                                       UserSessionModel targetUserSession) {
+        final ClientScopeModel delegationScope =
+                KeycloakModelUtils.getClientScopeByName(realm, "delegation");
+
+        if (delegationScope == null) {
+            logger.warnf("'delegation' client scope not found in realm '%s' — " +
+                    "DelegationActMapper will not fire. Create the optional scope in the admin console.",
+                    realm.getName());
+            return;
+        }
+
+        final AuthenticatedClientSessionModel clientSession =
+                targetUserSession.getAuthenticatedClientSessionByClient(requestingClient.getId());
+
+        if (clientSession == null) {
+            logger.warnf("AuthenticatedClientSessionModel not found for client '%s' — " +
+                    "cannot inject delegation scope.", requestingClient.getClientId());
+            return;
+        }
+
+        // Key = scope ID, value = scope name. This is the contract
+        // DefaultClientSessionContext uses when building the scope list.
+        clientSession.setNote(delegationScope.getId(), delegationScope.getName());
+        logger.debugf("Injected 'delegation' scope (id=%s) onto client session for client '%s'",
+                delegationScope.getId(), requestingClient.getClientId());
     }
 }
