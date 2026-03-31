@@ -1,0 +1,68 @@
+meta {
+  name: Refresh the Delegation Token
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{keycloak_realm_uri}}/protocol/openid-connect/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  refresh_token: {{delegation_refresh_token}}
+  client_id: {{client_a1}}
+  grant_type: refresh_token
+  client_secret: {{client_a1_secret}}
+}
+
+script:pre-request {
+  
+  
+  
+}
+
+script:post-response {
+  console.log("New Access Token from Refresh Token:");
+  
+  function base64UrlDecode(str) {
+    str = str.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = str.length % 4;
+    if (pad) {
+      str += '='.repeat(4 - pad);
+    }
+    return Buffer.from(str, 'base64').toString('utf8');
+  }
+  
+  const body = res.getBody();
+  const token = body.access_token;
+  
+  if (!token) {
+    throw new Error('No access_token found');
+  }
+  
+  const [, payload] = token.split('.');
+  const decodedPayload = JSON.parse(base64UrlDecode(payload));
+  
+  console.log("Delegation Token was Minted (Token Exchange):")
+  console.log(JSON.stringify(decodedPayload, null, 2));
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  ## In Curl
+  
+  curl -X POST "https://keycloak.local:8443/realms/poc/protocol/openid-connect/token" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -H "Authorization: Basic $(echo -n 'delegate-client:CLIENT_SECRET' | base64)" \
+    --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+    --data-urlencode "subject_token=ALICE_ACCESS_TOKEN" \
+    --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:access_token" \
+    --data-urlencode "requested_subject=AMINA_USER_ID" \
+    --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token"
+}

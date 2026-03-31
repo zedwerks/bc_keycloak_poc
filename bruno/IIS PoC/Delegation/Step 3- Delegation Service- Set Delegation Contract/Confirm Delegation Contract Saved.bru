@@ -1,0 +1,50 @@
+meta {
+  name: Confirm Delegation Contract Saved
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{delegation_server}}/delegations/{{delegation_contract_id}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "delegate": {
+          "user_id": "{{delegate_user_id}}"
+      },
+      "delegator": {
+          "user_id": "{{delegator_user_id}}"
+      },
+      "scope": [
+          "fin:cra:taxes:read",
+          "sdpr:myss:case:write"
+      ],
+      "status": "active",
+      "purpose": "AFA Application",
+      "expires_at": 1794024830
+  }
+}
+
+body:form-urlencoded {
+  ~subject_token: {{delegator_access_token}}
+}
+
+script:post-response {
+  // Ensure response is JSON
+  const body = res.getBody();
+  
+  // Validate token exists
+  if (!body.delegate.user_id) {
+    throw new Error("No delegate.user_id found in response");
+  }
+  
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

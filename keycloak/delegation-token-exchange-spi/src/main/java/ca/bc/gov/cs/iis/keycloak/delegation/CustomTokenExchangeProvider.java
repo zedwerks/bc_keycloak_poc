@@ -24,7 +24,10 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.io.IOException;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -336,6 +339,22 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
         }
 
         final AccessToken issuedAccessToken = builder.getAccessToken();
+
+        // Set act claim directly on the token before signing.
+        // This is the only reliable approach in KC26 — the scope parameter in
+        // token exchange is ignored since KC24, so mapper-based approaches that
+        // depend on scope resolution do not work. The session note persists the
+        // value for refresh tokens (handled by DelegationAwareTokenManager).
+        if (this.actClaimJson != null) {
+            try {
+                Map<String, Object> actMap = org.keycloak.util.JsonSerialization
+                        .readValue(this.actClaimJson, new TypeReference<Map<String, Object>>() {});
+                issuedAccessToken.setOtherClaims("act", actMap);
+                logger.debugf("Set act claim directly on issued access token");
+            } catch (IOException e) {
+                logger.warnf("Failed to parse actClaimJson for direct token injection: %s", e.getMessage());
+            }
+        }
 
         // Keep azp / issued-for aligned to the RP performing the exchange.
         issuedAccessToken.issuedFor(requestingClient.getClientId());

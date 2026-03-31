@@ -29,14 +29,12 @@ resource "keycloak_openid_client_optional_scopes" "client_delegate_svc_optional_
     keycloak_openid_client_scope.fin_cra_taxes_read.name,
     keycloak_openid_client_scope.sdpr_myss_case_read.name,
     keycloak_openid_client_scope.scope_ppid_sector_a.name,
-    keycloak_openid_client_scope.scope_ppid_sector_b.name,
-  keycloak_openid_client_scope.delegation_scope.name]
+    keycloak_openid_client_scope.scope_ppid_sector_b.name]
   depends_on = [keycloak_openid_client.client_delegate_svc,
     keycloak_openid_client_scope.delegate_resolve_user_id,
     keycloak_openid_client_scope.fin_cra_taxes_read,
     keycloak_openid_client_scope.sdpr_myss_case_read,
     keycloak_openid_client_scope.scope_ppid_sector_a,
-    keycloak_openid_client_scope.scope_ppid_sector_b,
-  keycloak_openid_client_scope.delegation_scope]
+    keycloak_openid_client_scope.scope_ppid_sector_b]
 }
 

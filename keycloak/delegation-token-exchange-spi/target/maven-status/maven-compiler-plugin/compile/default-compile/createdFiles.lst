@@ -10,9 +10,8 @@ ca/bc/gov/cs/iis/keycloak/delegation/DelegationAwareTokenManager$1.class
 ca/bc/gov/cs/iis/keycloak/delegation/resolver/UserResolver.class
 ca/bc/gov/cs/iis/keycloak/auth/AuthTokenHelper.class
 ca/bc/gov/cs/iis/keycloak/delegation/resolver/DelegationUserResolverProviderFactory.class
-ca/bc/gov/cs/iis/keycloak/delegation/ActClaimProtocolMapper.class
+ca/bc/gov/cs/iis/keycloak/delegation/CustomTokenExchangeProvider$1.class
 ca/bc/gov/cs/iis/keycloak/ppid/PairwiseUtil.class
-ca/bc/gov/cs/iis/keycloak/delegation/ActClaimProtocolMapper$1.class
 ca/bc/gov/cs/iis/keycloak/delegation/DelegationContract$Delegate.class
 ca/bc/gov/cs/iis/keycloak/delegation/client/DelegationServiceClient.class
 ca/bc/gov/cs/iis/keycloak/delegation/resolver/DelegationUserResolver.class

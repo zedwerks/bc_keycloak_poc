@@ -35,12 +35,10 @@ resource "keycloak_openid_client_optional_scopes" "client_b_optional_scopes" {
   realm_id  = keycloak_realm.target.realm
   client_id = keycloak_openid_client.client_b.id
   optional_scopes = ["profile", keycloak_openid_client_scope.fin_cra_taxes_read.name,
-  keycloak_openid_client_scope.sdpr_myss_case_read.name,
-  keycloak_openid_client_scope.delegation_scope.name]
+  keycloak_openid_client_scope.sdpr_myss_case_read.name]
   depends_on = [keycloak_openid_client.client_b,
     keycloak_openid_client_scope.fin_cra_taxes_read,
-  keycloak_openid_client_scope.sdpr_myss_case_read,
-  keycloak_openid_client_scope.delegation_scope]
+  keycloak_openid_client_scope.sdpr_myss_case_read]
 }
 
 

@@ -25,10 +25,8 @@ resource "keycloak_openid_client" "client_b_rs" {
 resource "keycloak_openid_client_default_scopes" "client_b_rs_default_scopes" {
   realm_id  = keycloak_realm.target.realm
   client_id = keycloak_openid_client.client_b_rs.id
-  default_scopes = [keycloak_openid_client_scope.scope_ppid_sector_b.name,
-  keycloak_openid_client_scope.delegation_scope.name]
+  default_scopes = [keycloak_openid_client_scope.scope_ppid_sector_b.name]
   depends_on = [keycloak_openid_client.client_b_rs,
-    keycloak_openid_client_scope.scope_ppid_sector_b,
-  keycloak_openid_client_scope.delegation_scope]
+    keycloak_openid_client_scope.scope_ppid_sector_b]
 }
 

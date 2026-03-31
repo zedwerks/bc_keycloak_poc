@@ -45,12 +45,10 @@ resource "keycloak_openid_client_default_scopes" "client_a2_default_scopes" {
 resource "keycloak_openid_client_optional_scopes" "client_a2_optional_scopes" {
   realm_id  = keycloak_realm.target.realm
   client_id = keycloak_openid_client.client_a2.id
-  optional_scopes = ["profile", "email",
+  optional_scopes = ["email",
     keycloak_openid_client_scope.sdpr_myss_case_read.name,
-    keycloak_openid_client_scope.delegation_scope.name,
   keycloak_openid_client_scope.fin_cra_taxes_read.name]
   depends_on = [keycloak_openid_client.client_a2,
-    keycloak_openid_client_scope.delegation_scope,
     keycloak_openid_client_scope.sdpr_myss_case_read,
   keycloak_openid_client_scope.fin_cra_taxes_read]
 }
