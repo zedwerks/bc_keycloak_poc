@@ -1,10 +1,10 @@
-resource "keycloak_user" "test_user_alice" {
+resource "keycloak_user" "test_user_amina" {
   realm_id       = keycloak_realm.target.realm
-  username       = "alice"
+  username       = "amina"
   enabled        = true
-  first_name     = "Alice"
+  first_name     = "Amina"
   last_name      = "Smith"
-  email          = "alice@hotmail.com"
+  email          = "amina@hotmail.com"
   email_verified = true
   initial_password {
     value     = "password"
@@ -12,13 +12,13 @@ resource "keycloak_user" "test_user_alice" {
   }
 }
 
-resource "keycloak_user" "test_user_amina" {
+resource "keycloak_user" "test_user_joe" {
   realm_id       = keycloak_realm.target.realm
-  username       = "amina"
+  username       = "joe"
   enabled        = true
-  first_name     = "Amina"
-  last_name      = "SDPR"
-  email          = "amina@gmail.com"
+  first_name     = "Joe"
+  last_name      = "Smith"
+  email          = "joe@gmail.com"
   email_verified = true
   initial_password {
     value     = "password"

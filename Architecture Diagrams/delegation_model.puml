@@ -1,0 +1,69 @@
+@startuml
+skinparam sequenceArrowThickness 1.2
+skinparam sequenceArrowColor #222222
+skinparam sequenceLifeLineBorderColor #222222
+skinparam sequenceLifeLineBackgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+skinparam participant {
+  BackgroundColor #FFFFFF
+  BorderColor #888888
+  FontColor #222222
+}
+
+skinparam sequence {
+  GroupBackgroundColor #F8F8F8
+  GroupBorderColor #BBBBBB
+  GroupFontColor #222222
+  GroupHeaderFontColor #222222
+  DividerBackgroundColor #F0F0F0
+  DividerBorderColor #BBBBBB
+  DividerFontColor #222222
+}
+
+participant "Delegate (Joe)" as D #E1F5EE
+participant "Delegator (Alice)" as A #c2c0ea
+participant "Relying party" as RP #EEEDFE
+participant "Delegation service" as DS #FAECE7
+participant "Keycloak" as KC #E6F1FB
+participant "Target service" as SV #F9E6E6
+
+== Phase 1 — authentication and delegation request ==
+A -> RP : login
+RP -> KC : authenticate
+KC --> RP : access token (delegator)
+RP -> DS : request delegation\non behalf of delegator
+DS -> D : submit delegation request\nfor delegator
+
+== Phase 2 — authentication and delegation acceptance ==
+
+D -> RP : login
+RP -> KC : authenticate
+KC --> RP : access token (delegate)
+RP -> DS : accept delegation request\non behalf of delegate
+DS -> DS : create delegation contract\nwith delegator, delegate, scopes, audience, expiry
+DS --> RP : delegation contract id
+
+== Phase 3 — Delegation Token Exchange ==
+
+RP -> KC : token exchange request\n(subject_token, delegation_contract, audience, scope)
+
+KC -> DS : introspect delegation contract\n(delegator, delegate, scopes, audience)
+DS --> KC : contract details\n(delegator, delegate, scopes, audience)
+KC -> KC : validate contract id and audience.\nValidate delegator token, expiry.\nValidate scopes.
+KC -> KC : mint token\nsub=delegator / act.sub=delegate
+
+KC --> RP : delegation token with act.sub claim and sub as delegator.
+
+== Phase 4 — delegate Action ==
+RP -> SV : call target service\nwith delegation token
+SV --> RP : response
+
+note over D, RP
+  Target service sees:
+  sub = delegator (in its privacy zone)
+  act.sub = delegate (in its privacy zone)
+end note
+
+@enduml

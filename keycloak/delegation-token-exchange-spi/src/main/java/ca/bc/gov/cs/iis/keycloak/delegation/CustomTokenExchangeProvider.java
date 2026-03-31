@@ -8,8 +8,10 @@ import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -22,15 +24,17 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import ca.bc.gov.cs.iis.keycloak.delegation.client.DelegationServiceClient;
 
 public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProvider {
 
     public static final String PROVIDER_ID = "custom-token-exchange";
-    public static final String PARAM_DELEGATION_CONTRACT = "delegation_contract";
+    public static final String PARAM_DELEGATION_CONTRACT_ID = "delegation_contract_id";
     public static final String PARAM_SUBJECT_TOKEN = "subject_token";
-    public static final String ACT_SESSION_NOTE_CLAIM = "delegation-act-claim";
 
     /**
      * Use the standard parameter names so Keycloak internals and protocol mappers
@@ -40,17 +44,38 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
     private static final String PARAM_SCOPE = "scope";
 
     private static final String REQUESTED_TOKEN_TYPE_ACCESS_TOKEN = "urn:ietf:params:oauth:token-type:access_token";
+    private static final String REQUESTED_TOKEN_TYPE_REFRESH_TOKEN = "urn:ietf:params:oauth:token-type:refresh_token";
     private static final String RESPONSE_TOKEN_TYPE_BEARER = "Bearer";
     private static final String AUTH_METHOD = "custom-token-exchange";
+    private static final String REALM_ATTR_DELEGATION_SERVICE_URL = "delegation_service_base_url"; // set with Terraform
+                                                                                                   // realm.tf
+                                                                                                   // attributes
+    private static final String REALM_ATTR_DELEGATION_SERVICE_AUD_STRING = "delegation_service_audience"; // set with
+                                                                                                          // Terraform
+                                                                                                          // realm.tf
+                                                                                                          // attributes
 
     private static final Logger logger = Logger.getLogger(CustomTokenExchangeProvider.class);
 
+    KeycloakSession session;
     private String actClaimJson;
+    static String delegationServiceBaseUrl = null;
+    static String delegationServiceAudience = null;
+
+    public CustomTokenExchangeProvider(KeycloakSession session) {
+        this.session = session;
+        delegationServiceBaseUrl = session.getContext().getRealm().getAttribute(REALM_ATTR_DELEGATION_SERVICE_URL);
+        delegationServiceAudience = session.getContext().getRealm().getAttribute(REALM_ATTR_DELEGATION_SERVICE_AUD_STRING);
+    }
+
+    public CustomTokenExchangeProvider() {
+        // Default constructor for SPI instantiation; session will be set in factory.
+    }
 
     @Override
     public boolean supports(org.keycloak.protocol.oidc.TokenExchangeContext context) {
         return context.getFormParams() != null
-                && context.getFormParams().getFirst(PARAM_DELEGATION_CONTRACT) != null;
+                && context.getFormParams().getFirst(PARAM_DELEGATION_CONTRACT_ID) != null;
     }
 
     @Override
@@ -65,15 +90,15 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
         this.actClaimJson = null;
 
         final String actorTokenEncoded = formParams.getFirst(PARAM_SUBJECT_TOKEN);
-        final String delegationContextEncoded = formParams.getFirst(PARAM_DELEGATION_CONTRACT);
+        final String delegationContractId = formParams.getFirst(PARAM_DELEGATION_CONTRACT_ID);
 
         if (actorTokenEncoded == null || actorTokenEncoded.isBlank()) {
             logger.warn("Missing subject_token");
             throw new BadRequestException("Missing subject_token");
         }
-        if (delegationContextEncoded == null || delegationContextEncoded.isBlank()) {
-            logger.warn("Missing delegation_contract");
-            throw new BadRequestException("Missing delegation_contract");
+        if (delegationContractId == null || delegationContractId.isBlank()) {
+            logger.warn("Missing delegation_contract_id");
+            throw new BadRequestException("Missing delegation_contract_id");
         }
 
         final AccessToken actorToken;
@@ -84,9 +109,10 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
             throw new NotAuthorizedException("subject_token invalid", e);
         }
 
-        final DelegationContext delegation;
+        final DelegationContract delegation;
         try {
-            delegation = DelegationContext.fromBase64Url(delegationContextEncoded);
+            delegation = this.getDelegationContract(delegationContractId)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid delegation_contract"));
         } catch (IllegalArgumentException e) {
             logger.warn("Invalid delegation_contract", e);
             throw new BadRequestException("Invalid delegation_contract", e);
@@ -112,16 +138,29 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
             throw new BadRequestException("Missing delegator.userId in delegation_contract");
         }
 
-        final UserModel delegateUser = session.users().getUserById(realm, delegation.getDelegate().getUserId());
+        // Resolve delegate user or service account based on delegation contract
+        // configuration
+        UserModel delegateUser = null;
+        if (delegation.getDelegate().getServiceAccountClientId() != null) {
+            ClientModel client = session.clients().getClientByClientId(realm,
+                    delegation.getDelegate().getServiceAccountClientId());
+            if (client != null && client.isServiceAccountsEnabled()) {
+                delegateUser = session.users().getServiceAccount(client);
+            }
+        } else {
+
+            delegateUser = session.users().getUserById(realm, delegation.getDelegate().getUserId());
+        }
+
         if (delegateUser == null) {
-            logger.warn("Unknown delegate user in delegation_contract");
-            throw new BadRequestException("Unknown delegate user in delegation_contract");
+            logger.warn("Could not resolve delegate user in delegation_contract");
+            throw new BadRequestException("Could not resolve delegate user in delegation_contract");
         }
 
         final UserModel delegatorUser = session.users().getUserById(realm, delegation.getDelegator().getUserId());
         if (delegatorUser == null) {
-            logger.warn("Unknown delegator user in delegation_contract");
-            throw new BadRequestException("Unknown delegator user in delegation_contract");
+            logger.warn("Could not resolve delegator user in delegation_contract");
+            throw new BadRequestException("Could not resolve delegator user in delegation_contract");
         }
 
         // subject_token represents the delegate in this model
@@ -171,7 +210,7 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
         }
 
         final ActClaim actClaim = new ActClaim(delegateSubjectId);
-        actClaim.setClientId(client.getClientId());
+        actClaim.setClientId(actorToken.getIssuedFor());
         this.actClaimJson = ActClaim.toJsonString(actClaim);
 
         final String ipAddress = clientConnection != null ? clientConnection.getRemoteAddr() : null;
@@ -222,8 +261,7 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
                 scope);
 
         if (this.actClaimJson != null) {
-            authSession.setUserSessionNote(ACT_SESSION_NOTE_CLAIM, this.actClaimJson);
-            targetUserSession.setNote(ACT_SESSION_NOTE_CLAIM, this.actClaimJson);
+            this.persistDelegationNote(requestingClient, targetUserSession, this.actClaimJson);
         }
 
         /**
@@ -253,10 +291,31 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
                 targetUserSession,
                 authSession);
 
+        final boolean includeRefreshToken = REQUESTED_TOKEN_TYPE_REFRESH_TOKEN.equals(requestedTokenType);
+
+        logger.infof("Including refresh token: %b", includeRefreshToken);
+
+        if (includeRefreshToken && !requestingClient.isStandardFlowEnabled()) {
+            // Refresh tokens require standard flow; warn and fall back to access-token
+            // only.
+            logger.warnf(
+                    "Client '%s' does not have standard flow enabled; refresh token cannot be issued. " +
+                            "Falling back to access token only.",
+                    requestingClient.getClientId());
+        }
+
         final TokenManager.AccessTokenResponseBuilder builder = tokenManager
                 .responseBuilder(realm, requestingClient, event, session, targetUserSession, clientSessionCtx)
                 .generateAccessToken()
                 .responseTokenType(RESPONSE_TOKEN_TYPE_BEARER);
+
+        // When the caller requests a refresh token, and the requesting client supports
+        // it, instruct the builder to include one alongside the access token.
+        if (includeRefreshToken && requestingClient.isStandardFlowEnabled()) {
+            logger.debugf("Generating refresh token for delegation exchange on client '%s'",
+                    requestingClient.getClientId());
+            builder.generateRefreshToken();
+        }
 
         final AccessToken issuedAccessToken = builder.getAccessToken();
 
@@ -319,5 +378,57 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
             boolean disallowOnHolderOfTokenMismatch,
             List<ClientModel> targetAudienceClients) {
         // Intentionally relaxed for the custom delegation-contract model.
+    }
+
+    /**
+     * Get the delegation contract from the Delegation Service. This method extracts
+     * the
+     * 
+     * @param contractId The ID of the delegation contract to retrieve from the
+     *                   Delegation Service.
+     * @return An Optional containing the delegation contract JSON if retrieval was
+     *         successful, or an empty Optional if not.
+     */
+    private Optional<DelegationContract> getDelegationContract(String contractId) {
+        if (delegationServiceBaseUrl == null || delegationServiceBaseUrl.isEmpty()) {
+            throw new IllegalStateException("Delegation Service Base URL is not configured");
+        }
+        if (contractId == null) {
+            throw new IllegalArgumentException("Contract ID cannot be null");
+        }
+
+        DelegationServiceClient delegationServiceClient = new DelegationServiceClient(delegationServiceBaseUrl,
+                delegationServiceAudience, session);
+        final String response = delegationServiceClient.getDelegationContract(contractId);
+        logger.debugf("Delegation Service Response: %s", response);
+
+        try {
+            DelegationContract contract = DelegationContract.fromJsonString(response);
+            return Optional.of(contract);
+        } catch (IllegalArgumentException e) {
+            logger.errorf("Failed to parse delegation contract: %s", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Call this inside your exchange() method once you have validated
+     * the delegation and resolved the delegate subject string.
+     *
+     * @param clientSessionCtx the ClientSessionContext from the exchange context
+     * @param delegateSubject  the subject (user ID) of the acting delegate
+     */
+    public static void persistDelegationNote(
+            ClientModel requestingClient, UserSessionModel userSession,
+            String delegationActJsonString) {
+
+        final AuthenticatedClientSessionModel clientSession = userSession
+                .getAuthenticatedClientSessionByClient(requestingClient.getId());
+
+        // This is the ONLY place to call setNote — on AuthenticatedClientSessionModel,
+        // NOT on ClientModel (which has no setNote method).
+        clientSession.setNote(
+                DelegationAwareTokenManager.DELEGATION_ACT_NOTE,
+                delegationActJsonString);
     }
 }

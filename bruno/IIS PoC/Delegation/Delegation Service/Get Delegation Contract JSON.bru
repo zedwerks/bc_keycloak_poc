@@ -1,0 +1,15 @@
+meta {
+  name: Get Delegation Contract JSON
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{delegation_server}}/delegations/{{delegation_contract_id}}
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

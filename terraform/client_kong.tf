@@ -17,7 +17,7 @@ resource "keycloak_openid_client" "client_kong" {
 resource "keycloak_openid_client_default_scopes" "client_kong_default_scopes" {
   realm_id       = keycloak_realm.target.realm
   client_id      = keycloak_openid_client.client_kong.id
-  default_scopes = ["acr"]
+  default_scopes = ["acr", "profile", "email"]
   depends_on     = [keycloak_openid_client.client_kong]
 }
 
@@ -25,15 +25,17 @@ resource "keycloak_openid_client_default_scopes" "client_kong_default_scopes" {
 resource "keycloak_openid_client_optional_scopes" "client_kong_optional_scopes" {
   realm_id  = keycloak_realm.target.realm
   client_id = keycloak_openid_client.client_kong.id
-  optional_scopes = ["profile", "email",
+  optional_scopes = [
     keycloak_openid_client_scope.scope_ppid_sector_a.name,
     keycloak_openid_client_scope.scope_ppid_sector_b.name,
     keycloak_openid_client_scope.fin_cra_taxes_read.name,
+    keycloak_openid_client_scope.delegation_scope.name,
   keycloak_openid_client_scope.sdpr_myss_case_read.name]
   depends_on = [
     keycloak_openid_client.client_kong,
     keycloak_openid_client_scope.fin_cra_taxes_read,
     keycloak_openid_client_scope.sdpr_myss_case_read,
+    keycloak_openid_client_scope.delegation_scope,
     keycloak_openid_client_scope.scope_ppid_sector_a,
   keycloak_openid_client_scope.scope_ppid_sector_b]
 }

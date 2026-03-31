@@ -16,7 +16,7 @@ body:form-urlencoded {
   client_secret: {{client_d_secret}}
   audience: client-b-rs
   scope: fin:cra:taxes:read ppid-sector-b delegation profile
-  delegation_contract: {{delegation_context}}
+  delegation_contract_id: {{delegation_contract_id}}
   requested_token_type: urn:ietf:params:oauth:token-type:access_token
   subject_token: {{delegate_access_token}}
   subject_token_type: urn:ietf:params:oauth:token-type:access_token
@@ -27,7 +27,7 @@ script:pre-request {
   const exp = Math.floor(Date.now() / 1000) + (30 * 60);
   
   // Now let's build the delegation_context
-  const delegationContext = {
+  const DelegationContract = {
     delegate: {
       user_id: bru.getEnvVar("delegate_user_id")
     },
@@ -39,7 +39,7 @@ script:pre-request {
     expires_at: exp
   };
   
-  const json = JSON.stringify(delegationContext,null, 2);
+  const json = JSON.stringify(DelegationContract,null, 2);
   
   console.log("Delegation Context (with Internal UserId)")
   console.log(json);
@@ -71,14 +71,17 @@ script:post-response {
     throw new Error('No access_token found');
   }
   
+  bru.setEnvVar("delegation_token_zone_b", token);
+  
   const [, payload] = token.split('.');
   const decodedPayload = JSON.parse(base64UrlDecode(payload));
   
   console.log("Kong was Minted (Token Exchange) the following Token:")
   console.log(JSON.stringify(decodedPayload, null, 2));
   console.log('---------------');
-  console.log("Delegator Zone B sub=" + bru.getEnvVar("amina-b-sub"));
+  console.log("Delegator Zone B sub=" + bru.getEnvVar("joe-b-sub"));
   console.log("Minted Delegation token sub=" + decodedPayload.sub);
+  
   
 }
 

@@ -7,10 +7,10 @@ skinparam actor {
   BorderColor #333333
 }
 
-actor "Amina\n(Delegator)" as Amina
-actor "Alice\n(Delegate)" as Alice
+actor "Joe\n(Delegator)" as Joe
+actor "Joe\n(Delegate)" as Joe
 
-Amina -[#000]-> Alice : 1. Delegates authority\n(scope, conditions)
-Alice -[#000]-> Amina : 2. Acts on behalf of Amina\nwithin delegation
+Joe -[#000]-> Joe : 1. Delegates authority\n(scope, conditions)
+Joe -[#000]-> Joe : 2. Acts on behalf of Joe\nwithin delegation
 
 @enduml

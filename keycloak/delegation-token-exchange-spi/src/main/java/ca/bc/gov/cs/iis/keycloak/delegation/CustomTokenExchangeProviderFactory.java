@@ -8,7 +8,7 @@ public final class CustomTokenExchangeProviderFactory implements TokenExchangePr
 
     @Override
     public TokenExchangeProvider create(KeycloakSession session) {
-        return new CustomTokenExchangeProvider();
+        return new CustomTokenExchangeProvider(session);
     }
 
     @Override

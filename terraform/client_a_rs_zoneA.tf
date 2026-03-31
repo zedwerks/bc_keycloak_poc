@@ -18,7 +18,7 @@ resource "keycloak_openid_client" "client_a_rs" {
     "subject_type" = "pairwise"
     # You’ll set a sector identifier URI per zone.
     # (Exact attribute keys vary by KC version; treat as the intent.)
-    "sector.identifier.uri" = "https://sector-b.local:9443/sector-a.json"
+    "sector.identifier.uri" = "https://sector-svc.local:9443/sector-a.json"
   }
 }
 
@@ -33,8 +33,10 @@ resource "keycloak_openid_client_optional_scopes" "client_a_rs_optional_scopes" 
   realm_id  = keycloak_realm.target.realm
   client_id = keycloak_openid_client.client_a_rs.id
   optional_scopes = [keycloak_openid_client_scope.sdpr_myss_case_read.name,
-  keycloak_openid_client_scope.fin_cra_taxes_read.name]
+    keycloak_openid_client_scope.fin_cra_taxes_read.name,
+  keycloak_openid_client_scope.delegation_scope.name]
   depends_on = [keycloak_openid_client.client_a_rs,
     keycloak_openid_client_scope.sdpr_myss_case_read,
-  keycloak_openid_client_scope.fin_cra_taxes_read]
+  keycloak_openid_client_scope.fin_cra_taxes_read,
+  keycloak_openid_client_scope.delegation_scope]
 }

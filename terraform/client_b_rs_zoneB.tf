@@ -18,7 +18,7 @@ resource "keycloak_openid_client" "client_b_rs" {
     "subject_type" = "pairwise"
     # You’ll set a sector identifier URI per zone.
     # (Exact attribute keys vary by KC version; treat as the intent.)
-    "sector.identifier.uri" = "https://sector-b.local:9443/sector-b.json"
+    "sector.identifier.uri" = "https://sector-svc.local:9443/sector-b.json"
   }
 }
 

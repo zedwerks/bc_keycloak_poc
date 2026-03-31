@@ -19,7 +19,7 @@ resource "keycloak_openid_client" "client_a1" {
     "subject_type" = "pairwise"
     # You’ll set a sector identifier URI per zone.
     # (Exact attribute keys vary by KC version; treat as the intent.)
-    "sector.identifier.uri" = "https://sector-a.local:9443/sector-a.json"
+    "sector.identifier.uri" = "https://sector-svc.local:9443/sector-a.json"
   }
 }
 
@@ -35,20 +35,23 @@ resource "keycloak_openid_audience_protocol_mapper" "client_a1_audience_mapper" 
 
 # --- Client Scope that signals permission to add audience ---
 resource "keycloak_openid_client_default_scopes" "client_a1_default_scopes" {
-  realm_id       = keycloak_realm.target.realm
-  client_id      = keycloak_openid_client.client_a1.id
-  default_scopes = [keycloak_openid_client_scope.scope_ppid_sector_a.name]
-  depends_on     = [keycloak_openid_client.client_a1, keycloak_openid_client_scope.scope_ppid_sector_a]
+  realm_id  = keycloak_realm.target.realm
+  client_id = keycloak_openid_client.client_a1.id
+  default_scopes = [keycloak_openid_client_scope.scope_ppid_sector_a.name,
+  keycloak_openid_client_scope.delegation_scope.name]
+  depends_on = [keycloak_openid_client.client_a1, keycloak_openid_client_scope.scope_ppid_sector_a]
 }
 
 resource "keycloak_openid_client_optional_scopes" "client_a1_optional_scopes" {
   realm_id  = keycloak_realm.target.realm
   client_id = keycloak_openid_client.client_a1.id
   optional_scopes = ["profile", "email", keycloak_openid_client_scope.sdpr_myss_case_read.name,
+  keycloak_openid_client_scope.delegation_scope.name,
   keycloak_openid_client_scope.fin_cra_taxes_read.name]
   depends_on = [keycloak_openid_client.client_a1,
     keycloak_openid_client_scope.sdpr_myss_case_read,
-  keycloak_openid_client_scope.fin_cra_taxes_read]
+  keycloak_openid_client_scope.fin_cra_taxes_read,
+  keycloak_openid_client_scope.delegation_scope]
 }
 
 

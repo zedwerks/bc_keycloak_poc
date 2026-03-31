@@ -1,13 +1,12 @@
 {
     "id": "746a6b6a-1866-4716-86bf-9584fc69f080",
     "delegate": {
-        "type": "service_account"
+        "user_id": "4fa90bcf-d1a8-4ecb-8c6f-428487fc2dc8"
     },
     "delegator": {
-        "user_id": "746a6b6a-1866-4716-86bf-9584fc69f080"
+        "user_id": "f5e6281c-daca-48a0-bd62-d80e60bd96c4"
     },
     "scope": [
-        "fin:cra:taxes:read",
         "sdpr:myss:case:write"
     ],
     "status": "active",

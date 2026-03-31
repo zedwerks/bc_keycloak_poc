@@ -13,7 +13,7 @@
     "sid": "989c4562-cca7-45ef-a829-c309e7536d64",
     "scope": "openid profile read:finance",
     "name": "Alice Smith",
-    "preferred_username": "alice",
+    "preferred_username": "joe",
     "given_name": "Alice",
     "family_name": "Smith",
     "delegation": {

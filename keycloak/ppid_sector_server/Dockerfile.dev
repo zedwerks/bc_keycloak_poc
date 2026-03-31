@@ -20,11 +20,11 @@ COPY server.mjs ./server.mjs
 # generate a small self-signed SAN cert that covers both hosts
 RUN mkdir -p $CERT_DIR && \
     cat > $CERT_DIR/openssl.cnf <<'EOF' && \
-    printf "[SAN]\nsubjectAltName=DNS:${SECTOR_A_HOST},DNS:${SECTOR_B_HOST}\n" >> $CERT_DIR/openssl.cnf && \
+    printf "[SAN]\nsubjectAltName=DNS:${SECTOR_A_HOST}\n" >> $CERT_DIR/openssl.cnf && \
     openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
       -subj "/CN=sector-json.local" \
       -keyout $KEY_FILE -out $CERT_FILE \
-      -addext "subjectAltName=DNS:${SECTOR_A_HOST},DNS:${SECTOR_B_HOST}"
+      -addext "subjectAltName=DNS:${SECTOR_A_HOST}"
 EOF
 
 # non-root
@@ -36,7 +36,6 @@ USER app
 # defaults for server.mjs
 ENV PORT=8443
 ENV SECTOR_A_HOST=${SECTOR_A_HOST}
-ENV SECTOR_B_HOST=${SECTOR_B_HOST}
 ENV TLS_CERT=${CERT_FILE}
 ENV TLS_KEY=${KEY_FILE}
 

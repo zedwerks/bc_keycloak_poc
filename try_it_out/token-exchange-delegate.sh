@@ -9,7 +9,7 @@ CLIENT_ID="client-d"
 CLIENT_SECRET=$TF_VAR_client_delegate_svc_secret
 USER_ACCESS_TOKEN=$(cat tokens/access-token.jwt)
 
-DELEGATED_SUBJECT_USER_ID=${amina_sub_uuid}
+DELEGATED_SUBJECT_USER_ID=${joe_sub_uuid}
 
   curl -X POST "$ISSUER_BASE/protocol/openid-connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \

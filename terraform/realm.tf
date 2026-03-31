@@ -10,5 +10,7 @@ resource "keycloak_realm" "target" {
   #}
   attributes = {
     "pairwiseSubSalt" = "86f09047-0025-4aa3-83f5-ff69905a0f3b" # do not change salt!!
+    "delegation_service_base_url" = "http://delegation-svc:3000",
+    "delegation_service_audience" = "delegation-svc"
   }
 }

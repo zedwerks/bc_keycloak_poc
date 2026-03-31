@@ -1,8 +1,7 @@
 {
     "id": "746a6b6a-1866-4716-86bf-9584fc69f080",
     "delegate": {
-        "type": "service_account",
-        "clients_ids": ["746a6b6a-1866-4716-86bf-9584fc69f080"]
+        "service_account_clients_id": "client-a-svc"
     },
     "delegator": {
         "user_id": "746a6b6a-1866-4716-86bf-9584fc69f080"

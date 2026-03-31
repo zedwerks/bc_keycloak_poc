@@ -18,20 +18,20 @@ Alice -> KC : Authorization Code / Client Auth
 KC --> Alice : Access Token\n(sub = Alice)
 
 == Step 2: Alice requests delegated access ==
-Alice -> DS : Request delegation token\nfor Amina\n(scope, expiry)
+Alice -> DS : Request delegation token\nfor Joe\n(scope, expiry)
 
 == Step 3: Delegation Service performs token exchange ==
 DS -> KC : POST /token\n\
 grant_type=urn:ietf:params:oauth:grant-type:token-exchange\n\
 subject_token = Alice_token\n\
 delegation_id = <uuid>\n\
-delegator_sub = Amina
+delegator_sub = Joe
 
 == Step 4: Keycloak mints delegated token ==
 KC --> DS : Access Token\n\
 sub = Alice\n\
 delegation = {\n\
-  delegator_sub: Amina,\n\
+  delegator_sub: Joe,\n\
   scopes,\n\
   expires_at\n\
 }
@@ -41,6 +41,6 @@ DS --> Alice : Delegated Access Token
 
 == Step 6: Resource access ==
 Alice -> RS : API call\nAuthorization: Bearer delegated_token
-RS --> Alice : Authorized response\n(acting for Amina)
+RS --> Alice : Authorized response\n(acting for Joe)
 
 @enduml

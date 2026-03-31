@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 
-public class DelegationContext {
+public class DelegationContract {
 
     @JsonProperty("id")
     private String id;
@@ -27,7 +27,7 @@ public class DelegationContext {
     private long expiresAt;
 
     // Required by Jackson
-    public DelegationContext() {
+    public DelegationContract() {
     }
 
     public String getId() {
@@ -74,7 +74,34 @@ public class DelegationContext {
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
 
-    public static DelegationContext fromBase64Url(String encoded) {
+    public static DelegationContract fromJsonString(String json) {
+
+        if (json == null || json.isBlank()) {
+            throw new IllegalArgumentException("delegation JSON is missing");
+        }
+
+        try {
+            DelegationContract ctx = MAPPER.readValue(json, DelegationContract.class);
+
+            // 🔐 minimal validation
+            if (ctx.getDelegate() == null || ctx.getDelegator() == null) {
+                throw new IllegalArgumentException("Missing required delegation fields");
+            }
+
+            if (ctx.getExpiresAt() != 0 &&
+                    ctx.getExpiresAt() < (System.currentTimeMillis() / 1000)) {
+                throw new IllegalArgumentException("Delegation context is expired");
+            }
+
+            return ctx;
+
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException(
+                    "Invalid delegation JSON: " + e.getOriginalMessage(), e);
+        }
+    }
+
+    public static DelegationContract fromBase64Url(String encoded) {
 
         if (encoded == null || encoded.isBlank()) {
             throw new IllegalArgumentException("delegation_context is missing");
@@ -90,7 +117,7 @@ public class DelegationContext {
         try {
             String json = new String(decoded, StandardCharsets.UTF_8);
 
-            DelegationContext ctx = MAPPER.readValue(json, DelegationContext.class);
+            DelegationContract ctx = MAPPER.readValue(json, DelegationContract.class);
 
             // 🔐 minimal validation (you can expand this)
             if (ctx.getDelegate() == null || ctx.getDelegator() == null) {
@@ -109,7 +136,7 @@ public class DelegationContext {
         }
     }
 
-    public static String toJsonString(DelegationContext context) {
+    public static String toJsonString(DelegationContract context) {
         try {
             return new ObjectMapper().writeValueAsString(context);
         } catch (Exception e) {

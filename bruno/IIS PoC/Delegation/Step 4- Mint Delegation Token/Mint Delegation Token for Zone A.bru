@@ -12,12 +12,12 @@ post {
 
 body:form-urlencoded {
   grant_type: urn:ietf:params:oauth:grant-type:token-exchange
-  client_id: {{client_d}}
-  client_secret: {{client_d_secret}}
+  client_id: {{client_a1}}
+  client_secret: {{client_a1_secret}}
   audience: client-a-rs
-  scope: fin:cra:taxes:read ppid-sector-a delegation profile
-  delegation_contract: {{delegation_context}}
-  requested_token_type: urn:ietf:params:oauth:token-type:access_token
+  scope: fin:cra:taxes:read ppid-sector-a profile email
+  delegation_contract_id: {{delegation_contract_id}}
+  requested_token_type: urn:ietf:params:oauth:token-type:refresh_token
   subject_token: {{delegate_access_token}}
   subject_token_type: urn:ietf:params:oauth:token-type:access_token
 }
@@ -27,7 +27,7 @@ script:pre-request {
   const exp = Math.floor(Date.now() / 1000) + (30 * 60);
   
   // Now let's build the delegation_context
-  const delegationContext = {
+  const DelegationContract = {
     delegate: {
       user_id: bru.getEnvVar("delegate_user_id")
     },
@@ -39,7 +39,7 @@ script:pre-request {
     expires_at: exp
   };
   
-  const json = JSON.stringify(delegationContext,null, 2);
+  const json = JSON.stringify(DelegationContract,null, 2);
   
   console.log("Delegation Context (with Internal UserId)")
   console.log(json);

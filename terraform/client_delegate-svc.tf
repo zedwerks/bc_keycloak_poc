@@ -1,6 +1,6 @@
 resource "keycloak_openid_client" "client_delegate_svc" {
   realm_id                        = keycloak_realm.target.realm
-  client_id                       = "client-delegation-svc"
+  client_id                       = "delegation-svc"
   name                            = "Delegate Service"
   access_type                     = "CONFIDENTIAL"
   client_secret                   = var.client_d_secret

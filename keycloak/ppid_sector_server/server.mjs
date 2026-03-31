@@ -11,12 +11,11 @@ import helmet from "helmet";
 
 
 // Expected hostnames (as they appear in the Host header / certificate SAN)
-const HOST_A = process.env.SECTOR_A_HOST || "sector-a.example.com";
-const HOST_B = process.env.SECTOR_B_HOST || "sector-b.example.com";
+const HOST_SECTOR_SVC = process.env.HOST_SECTOR_SVC || "sector-svc.example.com";
 
-// TLS certs (SAN must cover both HOST_A and HOST_B)
+// TLS certs (SAN must cover both HOST_SECTOR_SVC and HOST_B)
 const CERT_FILE = process.env.TLS_CERT || "./cert.pem";
-const KEY_FILE  = process.env.TLS_KEY  || "./sector-a.example.com+2-key.pem";
+const KEY_FILE  = process.env.TLS_KEY  || "./sector-svc.example.com+2-key.pem";
 
 // ----------------------------------------------------------------------------
 
@@ -37,6 +36,11 @@ var sector_b = [
   "client-b-rs"
 ]
 
+var sector_c = [
+  "client-c",
+  "client-c-rs"
+]
+
 app.get("/sector_a.json", (req, res) => {
   return res.type("application/json").send(JSON.stringify(sector_a));
 });
@@ -45,6 +49,9 @@ app.get("/sector_b.json", (req, res) => {
   return res.type("application/json").send(JSON.stringify(sector_b));
 });
 
+app.get("/sector_c.json", (req, res) => {
+  return res.type("application/json").send(JSON.stringify(sector_c));
+});
 
 // Strictly cacheable per spec (optional)
 app.use((_, res, next) => {
@@ -65,6 +72,7 @@ const tlsOptions = {
 const PORT = Number(process.env.PORT || 8443);
 https.createServer(tlsOptions, app).listen(PORT, () => {
   console.log(`Sector JSON server on :${PORT}`);
-  console.log(`→ https://${HOST_A}:${PORT}/sector.json`);
-  console.log(`→ https://${HOST_B}:${PORT}/sector.json`);
+  console.log(`→ https://${HOST_SECTOR_SVC}:${PORT}/sector_a.json`);
+  console.log(`→ https://${HOST_SECTOR_SVC}:${PORT}/sector_b.json`);
+  console.log(`→ https://${HOST_SECTOR_SVC}:${PORT}/sector_c.json`);
 });

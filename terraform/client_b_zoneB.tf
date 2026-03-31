@@ -20,7 +20,7 @@ resource "keycloak_openid_client" "client_b" {
     "subject_type" = "pairwise"
     # You’ll set a sector identifier URI per zone.
     # (Exact attribute keys vary by KC version; treat as the intent.)
-    "sector.identifier.uri" = "https://sector-b.local:9443/sector-b.json"
+    "sector.identifier.uri" = "https://sector-svc.local:9443/sector-b.json"
   }
 }
 
@@ -35,10 +35,12 @@ resource "keycloak_openid_client_optional_scopes" "client_b_optional_scopes" {
   realm_id  = keycloak_realm.target.realm
   client_id = keycloak_openid_client.client_b.id
   optional_scopes = ["profile", keycloak_openid_client_scope.fin_cra_taxes_read.name,
-  keycloak_openid_client_scope.sdpr_myss_case_read.name]
+  keycloak_openid_client_scope.sdpr_myss_case_read.name,
+  keycloak_openid_client_scope.delegation_scope.name]
   depends_on = [keycloak_openid_client.client_b,
     keycloak_openid_client_scope.fin_cra_taxes_read,
-  keycloak_openid_client_scope.sdpr_myss_case_read]
+  keycloak_openid_client_scope.sdpr_myss_case_read,
+  keycloak_openid_client_scope.delegation_scope]
 }
 
 /* Need this to allow Kong to perform token exchange. Kong must me an audience of the
