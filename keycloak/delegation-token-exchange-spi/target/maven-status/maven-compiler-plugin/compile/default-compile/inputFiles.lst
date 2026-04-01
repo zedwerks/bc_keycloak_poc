@@ -2,6 +2,7 @@
 /Users/brad/Documents/GitHub/zedwerks/_client-projects/iis_keycloak_poc/keycloak/delegation-token-exchange-spi/src/main/java/ca/bc/gov/cs/iis/keycloak/delegation/ActClaim.java
 /Users/brad/Documents/GitHub/zedwerks/_client-projects/iis_keycloak_poc/keycloak/delegation-token-exchange-spi/src/main/java/ca/bc/gov/cs/iis/keycloak/delegation/CustomTokenExchangeProvider.java
 /Users/brad/Documents/GitHub/zedwerks/_client-projects/iis_keycloak_poc/keycloak/delegation-token-exchange-spi/src/main/java/ca/bc/gov/cs/iis/keycloak/delegation/CustomTokenExchangeProviderFactory.java
+/Users/brad/Documents/GitHub/zedwerks/_client-projects/iis_keycloak_poc/keycloak/delegation-token-exchange-spi/src/main/java/ca/bc/gov/cs/iis/keycloak/delegation/DelegationActMapper.java
 /Users/brad/Documents/GitHub/zedwerks/_client-projects/iis_keycloak_poc/keycloak/delegation-token-exchange-spi/src/main/java/ca/bc/gov/cs/iis/keycloak/delegation/DelegationAwareTokenManager.java
 /Users/brad/Documents/GitHub/zedwerks/_client-projects/iis_keycloak_poc/keycloak/delegation-token-exchange-spi/src/main/java/ca/bc/gov/cs/iis/keycloak/delegation/DelegationContract.java
 /Users/brad/Documents/GitHub/zedwerks/_client-projects/iis_keycloak_poc/keycloak/delegation-token-exchange-spi/src/main/java/ca/bc/gov/cs/iis/keycloak/delegation/client/DelegationServiceClient.java

@@ -60,6 +60,21 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
                                                                                                           // realm.tf
                                                                                                           // attributes
 
+    /**
+     * User session note keys for delegation context.
+     * These are written at token-exchange time and survive across the full session
+     * lifecycle — including refresh token grants — because UserSessionModel notes
+     * are persisted with the session, not with a single request.
+     *
+     * The protocol mapper (DelegationActMapper) reads these notes on every token
+     * issuance so the act claim is present on both the initial access token and
+     * any tokens minted from a subsequent refresh_token grant.
+     */
+    public static final String SESSION_NOTE_ACT_JSON        = "delegation.act";
+    public static final String SESSION_NOTE_ACT_SUB         = "delegation.act.sub";
+    public static final String SESSION_NOTE_ACT_CLIENT_ID   = "delegation.act.client_id";
+    public static final String SESSION_NOTE_CONTRACT_ID     = "delegation.contract.id";
+
     private static final Logger logger = Logger.getLogger(CustomTokenExchangeProvider.class);
 
     KeycloakSession session;
@@ -234,6 +249,24 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
                 null,
                 null,
                 UserSessionModel.SessionPersistenceState.PERSISTENT);
+
+        // Write delegation context into user session notes immediately after session
+        // creation. These notes are persisted with the UserSessionModel and survive
+        // for the full lifetime of the session — including subsequent refresh_token
+        // grants — where the original request parameters (delegation_contract_id,
+        // subject_token, etc.) are no longer present.
+        //
+        // The DelegationActMapper reads these notes on every token issuance so the
+        // act claim is consistently present on the initial access token AND on any
+        // access token minted from a refresh. When Joe switches back to his own
+        // session (a separate UserSessionModel with no delegation notes), the mapper
+        // finds nothing and emits no act claim — exactly the desired behaviour.
+        targetUserSession.setNote(SESSION_NOTE_ACT_JSON,      this.actClaimJson);
+        targetUserSession.setNote(SESSION_NOTE_ACT_SUB,       delegateSubjectId);
+        targetUserSession.setNote(SESSION_NOTE_ACT_CLIENT_ID, actorToken.getIssuedFor());
+        targetUserSession.setNote(SESSION_NOTE_CONTRACT_ID,   delegationContractId);
+        logger.debugf("Persisted delegation context into user session notes: contractId=%s, act.sub=%s",
+                delegationContractId, delegateSubjectId);
 
         return exchangeClientToOIDCClient(
                 delegatorUser,

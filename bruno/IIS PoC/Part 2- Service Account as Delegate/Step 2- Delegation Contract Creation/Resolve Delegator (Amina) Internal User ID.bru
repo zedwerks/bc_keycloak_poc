@@ -1,7 +1,7 @@
 meta {
-  name: Resolve Delegate User ID copy
+  name: Resolve Delegator (Amina) Internal User ID
   type: http
-  seq: 3
+  seq: 1
 }
 
 post {
@@ -11,7 +11,7 @@ post {
 }
 
 body:form-urlencoded {
-  subject_token: {{svc_acct_delegate_access_token}}
+  subject_token: {{delegator_access_token}}
 }
 
 script:post-response {
@@ -26,9 +26,7 @@ script:post-response {
   // Save delegator user identifier.
   // we will need this for building up the delegation
   // context json.
-  bru.setEnvVar("svc_delegate_user_id", body.user_id);
-  
-  
+  bru.setEnvVar("delegator_user_id", body.user_id);
 }
 
 settings {

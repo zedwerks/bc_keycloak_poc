@@ -35,10 +35,10 @@ resource "keycloak_openid_audience_protocol_mapper" "client_a1_audience_mapper" 
 
 # --- Client Scope that signals permission to add audience ---
 resource "keycloak_openid_client_default_scopes" "client_a1_default_scopes" {
-  realm_id  = keycloak_realm.target.realm
-  client_id = keycloak_openid_client.client_a1.id
+  realm_id       = keycloak_realm.target.realm
+  client_id      = keycloak_openid_client.client_a1.id
   default_scopes = [keycloak_openid_client_scope.scope_ppid_sector_a.name]
-  depends_on = [keycloak_openid_client.client_a1, keycloak_openid_client_scope.scope_ppid_sector_a]
+  depends_on     = [keycloak_openid_client.client_a1, keycloak_openid_client_scope.scope_ppid_sector_a]
 }
 
 resource "keycloak_openid_client_optional_scopes" "client_a1_optional_scopes" {
@@ -75,3 +75,18 @@ resource "keycloak_openid_audience_protocol_mapper" "client_a1_delegate_svc_audi
   depends_on               = [keycloak_openid_client.client_delegate_svc]
 }
 
+
+
+resource "keycloak_generic_protocol_mapper" "client_a1_delegation_act_mapper" {
+  realm_id        = keycloak_realm.target.realm
+  client_id       = keycloak_openid_client.client_a1.id
+  name            = "delegation-act-mapper"
+  protocol        = "openid-connect"
+  protocol_mapper = "delegation-act-mapper" # matches the PROVIDER_ID in name of the protocol mapper in Keycloak Custom code.
+  config = {
+    "access.token.claim"      = "true"
+    "lightweight.token.claim" = "true"
+    "id.token.claim"          = "true"
+    "userinfo.token.claim"    = "true"
+  }
+}

@@ -1,5 +1,6 @@
 meta {
-  name: Step 2: Delegate  Login (Joe) Sector A
+  name: Step 1: Delegator (Amina) Sector B
+  seq: 1
 }
 
 auth {
@@ -12,13 +13,13 @@ auth:oauth2 {
   authorization_url: {{keycloak_realm_uri}}/protocol/openid-connect/auth
   access_token_url: {{keycloak_realm_uri}}/protocol/openid-connect/token
   refresh_token_url: 
-  client_id: {{client_a1}}
-  client_secret: {{client_a1_secret}}
-  scope: sdpr:myss:case:read profile fin:cra:taxes:read
+  client_id: {{client_b}}
+  client_secret: 
+  scope: profile fin:cra:taxes:read
   state: 
   pkce: true
   credentials_placement: body
-  credentials_id: delegate-token
+  credentials_id: delegator-token
   token_placement: header
   token_header_prefix: Bearer
   auto_fetch_token: false
@@ -26,5 +27,5 @@ auth:oauth2 {
 }
 
 auth:oauth2:additional_params:auth_req:queryparams {
-  login_hint: joe
+  login_hint: amina
 }
