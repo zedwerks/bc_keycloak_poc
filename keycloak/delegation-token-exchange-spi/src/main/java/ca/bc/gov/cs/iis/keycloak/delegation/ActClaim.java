@@ -13,6 +13,9 @@ public class ActClaim {
     @JsonProperty("original_client_id")
     private String clientId;
 
+    @JsonProperty("sub_type")
+    private String subType;
+
     public ActClaim() {
     }
 
@@ -28,13 +31,22 @@ public class ActClaim {
         this.sub = sub;
     }
 
+    public String getSubType() {
+        return subType;
+    }
+
+    public void setSubType(String subType) {
+        this.subType = subType;
+    }
+
     public String getClientId() {
         return clientId;
     }
+
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
-    
+
     public static String toJsonString(ActClaim actClaim) {
         ObjectMapper mapper = new ObjectMapper();
         try {

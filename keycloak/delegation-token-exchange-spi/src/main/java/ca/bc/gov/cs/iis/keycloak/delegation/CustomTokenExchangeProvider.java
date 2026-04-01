@@ -215,7 +215,13 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
         final UserResolver userResolver = new UserResolverImpl(session);
         final String expectedDelegateSub;
         try {
-            expectedDelegateSub = userResolver.computePairwiseSub(realm, actorClient, delegateUser);
+            // Service account tokens use the raw Keycloak user UUID as sub, not a pairwise
+            // sub. Pairwise sub computation is only applicable to human user delegates.
+            if (delegateIsServiceAccount) {
+                expectedDelegateSub = delegateUser.getId();
+            } else {
+                expectedDelegateSub = userResolver.computePairwiseSub(realm, actorClient, delegateUser);
+            }
         } catch (RuntimeException e) {
             logger.warn("Failed to compute delegate pairwise subject for comparison", e);
             throw new BadRequestException("Failed to resolve delegate identity", e);
@@ -239,7 +245,13 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
 
         final String delegateSubjectId;
         try {
-            delegateSubjectId = userResolver.computePairwiseSub(realm, actAudienceClient, delegateUser);
+            // Service account act.sub should be the raw user UUID, consistent with how
+            // client_credentials tokens represent the service account subject.
+            if (delegateIsServiceAccount) {
+                delegateSubjectId = delegateUser.getId();
+            } else {
+                delegateSubjectId = userResolver.computePairwiseSub(realm, actAudienceClient, delegateUser);
+            }
         } catch (RuntimeException e) {
             logger.warn("Failed to compute delegate pairwise subject", e);
             throw new BadRequestException("Failed to compute delegate pairwise subject", e);
@@ -247,6 +259,11 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
 
         final ActClaim actClaim = new ActClaim(delegateSubjectId);
         actClaim.setClientId(actorToken.getIssuedFor());
+        if (delegateIsServiceAccount) {
+            actClaim.setSubType("service_account");
+        } else {
+            actClaim.setSubType("user");
+        }
         this.actClaimJson = ActClaim.toJsonString(actClaim);
 
         final String ipAddress = clientConnection != null ? clientConnection.getRemoteAddr() : null;
