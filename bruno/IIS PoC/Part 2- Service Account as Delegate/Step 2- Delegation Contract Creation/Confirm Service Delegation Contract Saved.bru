@@ -1,0 +1,32 @@
+meta {
+  name: Confirm Service Delegation Contract Saved
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{delegation_server}}/delegations/{{service_delegation_contract_id}}
+  body: json
+  auth: inherit
+}
+
+body:form-urlencoded {
+  ~subject_token: {{delegator_access_token}}
+}
+
+script:post-response {
+  // Ensure response is JSON
+  const body = res.getBody();
+  
+  // Validate token exists
+  if (!body.delegate.service_account_client_id) {
+    throw new Error("No delegate.service_account_client_id found in response");
+  }
+  
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

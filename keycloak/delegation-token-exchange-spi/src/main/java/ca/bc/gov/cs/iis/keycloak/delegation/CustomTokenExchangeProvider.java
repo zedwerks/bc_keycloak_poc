@@ -70,10 +70,10 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
      * issuance so the act claim is present on both the initial access token and
      * any tokens minted from a subsequent refresh_token grant.
      */
-    public static final String SESSION_NOTE_ACT_JSON        = "delegation.act";
-    public static final String SESSION_NOTE_ACT_SUB         = "delegation.act.sub";
-    public static final String SESSION_NOTE_ACT_CLIENT_ID   = "delegation.act.client_id";
-    public static final String SESSION_NOTE_CONTRACT_ID     = "delegation.contract.id";
+    public static final String SESSION_NOTE_ACT_JSON = "delegation.act";
+    public static final String SESSION_NOTE_ACT_SUB = "delegation.act.sub";
+    public static final String SESSION_NOTE_ACT_CLIENT_ID = "delegation.act.client_id";
+    public static final String SESSION_NOTE_CONTRACT_ID = "delegation.contract.id";
 
     private static final Logger logger = Logger.getLogger(CustomTokenExchangeProvider.class);
 
@@ -85,7 +85,8 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
     public CustomTokenExchangeProvider(KeycloakSession session) {
         this.session = session;
         delegationServiceBaseUrl = session.getContext().getRealm().getAttribute(REALM_ATTR_DELEGATION_SERVICE_URL);
-        delegationServiceAudience = session.getContext().getRealm().getAttribute(REALM_ATTR_DELEGATION_SERVICE_AUD_STRING);
+        delegationServiceAudience = session.getContext().getRealm()
+                .getAttribute(REALM_ATTR_DELEGATION_SERVICE_AUD_STRING);
     }
 
     public CustomTokenExchangeProvider() {
@@ -144,11 +145,26 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
             throw new BadRequestException("delegation_contract expired");
         }
 
-        if (delegation.getDelegate() == null
-                || delegation.getDelegate().getUserId() == null
-                || delegation.getDelegate().getUserId().isBlank()) {
-            logger.warn("Missing delegate.userId in delegation_contract");
-            throw new BadRequestException("Missing delegate.userId in delegation_contract");
+        if (delegation.getDelegate() == null) {
+            logger.warn("Missing delegate entry in delegation_contract");
+            throw new BadRequestException("Missing delegate in delegation_contract");
+        }
+
+        boolean delegateIsUser = delegation.getDelegate() != null && delegation.getDelegate().getUserId() != null
+                && !delegation.getDelegate().getUserId().isBlank();
+        boolean delegateIsServiceAccount = delegation.getDelegate() != null
+                && delegation.getDelegate().getServiceAccountClientId() != null
+                && !delegation.getDelegate().getServiceAccountClientId().isBlank();
+
+        if (!delegateIsUser && !delegateIsServiceAccount) {
+            logger.warn(
+                    "Delegate entry in delegation_contract must specify either user_id or service_account_client_id");
+            throw new BadRequestException("Invalid delegate in delegation_contract");
+        }
+        if (delegateIsUser && delegateIsServiceAccount) {
+            logger.warn(
+                    "Delegate entry in delegation_contract cannot specify both user_id and service_account_client_id");
+            throw new BadRequestException("Invalid delegate in delegation_contract");
         }
 
         if (delegation.getDelegator() == null
@@ -161,13 +177,13 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
         // Resolve delegate user or service account based on delegation contract
         // configuration
         UserModel delegateUser = null;
-        if (delegation.getDelegate().getServiceAccountClientId() != null) {
+        if (delegateIsServiceAccount) {
             ClientModel client = session.clients().getClientByClientId(realm,
                     delegation.getDelegate().getServiceAccountClientId());
             if (client != null && client.isServiceAccountsEnabled()) {
                 delegateUser = session.users().getServiceAccount(client);
             }
-        } else {
+        } else if (delegateIsUser) {
 
             delegateUser = session.users().getUserById(realm, delegation.getDelegate().getUserId());
         }
@@ -261,10 +277,10 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
         // access token minted from a refresh. When Joe switches back to his own
         // session (a separate UserSessionModel with no delegation notes), the mapper
         // finds nothing and emits no act claim — exactly the desired behaviour.
-        targetUserSession.setNote(SESSION_NOTE_ACT_JSON,      this.actClaimJson);
-        targetUserSession.setNote(SESSION_NOTE_ACT_SUB,       delegateSubjectId);
+        targetUserSession.setNote(SESSION_NOTE_ACT_JSON, this.actClaimJson);
+        targetUserSession.setNote(SESSION_NOTE_ACT_SUB, delegateSubjectId);
         targetUserSession.setNote(SESSION_NOTE_ACT_CLIENT_ID, actorToken.getIssuedFor());
-        targetUserSession.setNote(SESSION_NOTE_CONTRACT_ID,   delegationContractId);
+        targetUserSession.setNote(SESSION_NOTE_CONTRACT_ID, delegationContractId);
         logger.debugf("Persisted delegation context into user session notes: contractId=%s, act.sub=%s",
                 delegationContractId, delegateSubjectId);
 
@@ -381,7 +397,8 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
         if (this.actClaimJson != null) {
             try {
                 Map<String, Object> actMap = org.keycloak.util.JsonSerialization
-                        .readValue(this.actClaimJson, new TypeReference<Map<String, Object>>() {});
+                        .readValue(this.actClaimJson, new TypeReference<Map<String, Object>>() {
+                        });
                 issuedAccessToken.setOtherClaims("act", actMap);
                 logger.debugf("Set act claim directly on issued access token");
             } catch (IOException e) {
@@ -483,12 +500,16 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
 
     /**
      * Persists the act claim JSON onto the AuthenticatedClientSessionModel for
-     * the requestingClient. Must be called AFTER TokenManager.attachAuthenticationSession()
+     * the requestingClient. Must be called AFTER
+     * TokenManager.attachAuthenticationSession()
      * so the client session exists on the user session.
      *
-     * Note: the note goes on the requestingClient's session (not the audience/targetClient)
-     * because that is the session that TokenManager.attachAuthenticationSession() creates
-     * and that clientSessionCtx wraps. The audience clients only appear in the token's
+     * Note: the note goes on the requestingClient's session (not the
+     * audience/targetClient)
+     * because that is the session that TokenManager.attachAuthenticationSession()
+     * creates
+     * and that clientSessionCtx wraps. The audience clients only appear in the
+     * token's
      * aud claim — they do not have their own AuthenticatedClientSessionModel here.
      */
     private static void persistDelegationNote(
@@ -496,14 +517,14 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
             UserSessionModel userSession,
             String delegationActJsonString) {
 
-        final AuthenticatedClientSessionModel clientSession =
-                userSession.getAuthenticatedClientSessionByClient(requestingClient.getId());
+        final AuthenticatedClientSessionModel clientSession = userSession
+                .getAuthenticatedClientSessionByClient(requestingClient.getId());
 
         if (clientSession == null) {
             throw new IllegalStateException(
                     "AuthenticatedClientSessionModel not found for client '" +
-                    requestingClient.getClientId() +
-                    "' — call persistDelegationNote after attachAuthenticationSession");
+                            requestingClient.getClientId() +
+                            "' — call persistDelegationNote after attachAuthenticationSession");
         }
 
         clientSession.setNote("delegation.act", delegationActJsonString);
@@ -524,9 +545,8 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
      * Must be called AFTER TokenManager.attachAuthenticationSession().
      */
     private void injectDelegationScope(ClientModel requestingClient,
-                                       UserSessionModel targetUserSession) {
-        final ClientScopeModel delegationScope =
-                KeycloakModelUtils.getClientScopeByName(realm, "delegation");
+            UserSessionModel targetUserSession) {
+        final ClientScopeModel delegationScope = KeycloakModelUtils.getClientScopeByName(realm, "delegation");
 
         if (delegationScope == null) {
             logger.warnf("'delegation' client scope not found in realm '%s' — " +
@@ -535,8 +555,8 @@ public final class CustomTokenExchangeProvider extends AbstractTokenExchangeProv
             return;
         }
 
-        final AuthenticatedClientSessionModel clientSession =
-                targetUserSession.getAuthenticatedClientSessionByClient(requestingClient.getId());
+        final AuthenticatedClientSessionModel clientSession = targetUserSession
+                .getAuthenticatedClientSessionByClient(requestingClient.getId());
 
         if (clientSession == null) {
             logger.warnf("AuthenticatedClientSessionModel not found for client '%s' — " +
